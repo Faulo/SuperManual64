@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ddc26e43f2595a4ea8a1f91c268eaaf, type: 3}
+  m_Name: New Mario State
+  m_EditorClassIdentifier: 
+  input: 0
+  faceAngle: {x: 0, y: 0, z: 0}
+  angleVel: {x: 0, y: 0, z: 0}
+  slideYaw: 0
+  twirlYaw: 0
+  pos: {x: 0, y: 0, z: 0}
+  vel: {x: 0, y: 0, z: 0}
+  m_forwardVel: 0
+  slideVelX: 0
+  slideVelZ: 0
+  wall: {fileID: 0}
+  ceil: {fileID: 0}
+  floor: {fileID: 11400000, guid: 1ae5889db2664884a988c006c9d0a450, type: 2}
+  intendedMag: 0
+  intendedYaw: 0

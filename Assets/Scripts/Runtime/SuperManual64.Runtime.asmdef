@@ -1,7 +1,13 @@
 {
-    "name": "ExpositionOfExtraordinaryExperiences.Runtime",
+    "name": "SuperManual64.Runtime",
     "rootNamespace": "",
-    "references": [],
+    "references": [
+        "Unity.TextMeshPro",
+        "MyBox",
+        "Slothsoft.UnityExtensions",
+        "Cinemachine",
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
