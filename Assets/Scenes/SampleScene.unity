@@ -541,6 +541,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 400488855809449076, guid: 1f069683dfb531d4890f95656c948e0f,
+        type: 3}
+      propertyPath: attachedCamera
+      value: 
+      objectReference: {fileID: 330585545}
     - target: {fileID: 2239638936365057402, guid: 1f069683dfb531d4890f95656c948e0f,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -591,99 +596,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 2569425884692738575, guid: 1f069683dfb531d4890f95656c948e0f,
-        type: 3}
-      propertyPath: state
-      value: 
-      objectReference: {fileID: 11400000, guid: 3e0a18d4f99537f4fb9ccb4af7acba33,
-        type: 2}
     - target: {fileID: 5851857868507272136, guid: 1f069683dfb531d4890f95656c948e0f,
         type: 3}
       propertyPath: m_Name
       value: P_Avatar
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 7325834375311222242, guid: 1f069683dfb531d4890f95656c948e0f, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5851857868507272136, guid: 1f069683dfb531d4890f95656c948e0f,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4951825447235358984}
-    - targetCorrespondingSourceObject: {fileID: 5851857868507272136, guid: 1f069683dfb531d4890f95656c948e0f,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4951825447235358987}
-    - targetCorrespondingSourceObject: {fileID: 5851857868507272136, guid: 1f069683dfb531d4890f95656c948e0f,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 4951825447235358986}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1f069683dfb531d4890f95656c948e0f, type: 3}
---- !u!1 &4951825447235358983 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5851857868507272136, guid: 1f069683dfb531d4890f95656c948e0f,
-    type: 3}
-  m_PrefabInstance: {fileID: 4951825447235358982}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &4951825447235358984
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4951825447235358983}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bab50e51bd582a46b04ad78d27b2c18, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  state: {fileID: 11400000, guid: 3e0a18d4f99537f4fb9ccb4af7acba33, type: 2}
---- !u!114 &4951825447235358986
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4951825447235358983}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Actions: {fileID: -944628639613478452, guid: cfec60673e65e3246b2af1f484b6fe1b,
-    type: 3}
-  m_NotificationBehavior: 0
-  m_UIInputModule: {fileID: 0}
-  m_DeviceLostEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_DeviceRegainedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ControlsChangedEvent:
-    m_PersistentCalls:
-      m_Calls: []
-  m_ActionEvents: []
-  m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: 
-  m_DefaultActionMap: Player
-  m_SplitScreenIndex: -1
-  m_Camera: {fileID: 0}
---- !u!114 &4951825447235358987
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4951825447235358983}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e173bf34c96264743935e931ad090a27, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  state: {fileID: 11400000, guid: 3e0a18d4f99537f4fb9ccb4af7acba33, type: 2}
-  attachedCamera: {fileID: 330585545}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
