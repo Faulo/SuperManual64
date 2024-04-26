@@ -1,0 +1,8 @@
+using System;
+using UnityEngine;
+using UnityObject = UnityEngine.Object;
+
+namespace #NAMESPACE# {
+    sealed class #SCRIPTNAME# : MonoBehaviour {
+    }
+}
