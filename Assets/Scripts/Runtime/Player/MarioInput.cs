@@ -12,5 +12,17 @@ namespace SuperManual64.Player {
         public void OnMove(InputValue stick) {
             state.UpdateIntentions(stick.Get<Vector2>(), attachedCamera);
         }
+
+        public void OnA(InputValue button) {
+            Debug.Log($"A: {button.isPressed}");
+        }
+
+        public void OnB(InputValue button) {
+            Debug.Log($"B: {button.isPressed}");
+        }
+
+        public void OnZ(InputValue button) {
+            Debug.Log($"Z: {button.isPressed}");
+        }
     }
 }

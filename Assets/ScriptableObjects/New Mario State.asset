@@ -12,18 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ddc26e43f2595a4ea8a1f91c268eaaf, type: 3}
   m_Name: New Mario State
   m_EditorClassIdentifier: 
-  input: 0
-  faceAngle: {x: 0, y: 0, z: 0}
+  input: 32
+  intendedMag: 0
+  intendedYaw: 82
+  actionArg: 0
+  actionState: 0
+  actionTimer: 0
+  faceAngle: {x: 0, y: 82, z: 0}
   angleVel: {x: 0, y: 0, z: 0}
-  slideYaw: 0
+  slideYaw: 82
   twirlYaw: 0
-  pos: {x: 0, y: 0, z: 0}
-  vel: {x: 0, y: 0, z: 0}
-  m_forwardVel: 0
-  slideVelX: 0
-  slideVelZ: 0
+  pos: {x: 18.037378, y: 0, z: 49.77732}
+  vel: {x: 6.7984834, y: 0, z: 20.612307}
+  m_forwardVel: 21.704529
+  slideVelX: 6.7984834
+  slideVelZ: 20.612307
   wall: {fileID: 0}
   ceil: {fileID: 0}
   floor: {fileID: 11400000, guid: 1ae5889db2664884a988c006c9d0a450, type: 2}
-  intendedMag: 0
-  intendedYaw: 0
+  floorAngle: 0
+  health: 256
+  unitMultiplier: 0.01
