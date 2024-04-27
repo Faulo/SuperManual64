@@ -10,7 +10,7 @@ namespace SuperManual64.Editor {
         public override void OnInspectorGUI() {
             DrawDefaultInspector();
 
-            var marioState = target as MarioState;
+            var state = target as MarioState;
 
             EditorGUILayout.Space();
 
@@ -18,13 +18,17 @@ namespace SuperManual64.Editor {
 
             EditorGUI.BeginDisabledGroup(true);
 
-            EditorGUILayout.TextField("Flags", PrintFlag(marioState.flags));
+            EditorGUILayout.FloatField("Delta Yaw", state.deltaYaw);
+            EditorGUILayout.Toggle("Analog Stick Held Back", state.analogStickHeldBack);
+            EditorGUILayout.Toggle("Is Facing Downhill", state.isFacingDownhill);
+
+            EditorGUILayout.TextField("Flags", PrintFlag(state.flags));
 
             EditorGUILayout.LabelField("Current Action");
-            EditorGUILayout.TextArea(PrintFlag(marioState.action), EditorStyles.textArea, GUILayout.Height(128));
+            EditorGUILayout.TextArea(PrintFlag(state.action), EditorStyles.textArea, GUILayout.Height(128));
 
             EditorGUILayout.LabelField("Previous Action");
-            EditorGUILayout.TextArea(PrintFlag(marioState.prevAction), EditorStyles.textArea, GUILayout.Height(128));
+            EditorGUILayout.TextArea(PrintFlag(state.prevAction), EditorStyles.textArea, GUILayout.Height(128));
 
             EditorGUI.EndDisabledGroup();
         }

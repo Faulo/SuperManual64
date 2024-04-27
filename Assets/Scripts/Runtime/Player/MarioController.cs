@@ -13,6 +13,8 @@ namespace SuperManual64.Player {
         }
 
         void FixedUpdate() {
+            marioObj.AdvanceAnimation();
+
             for (bool inLoop = true; inLoop;) {
                 inLoop = (state.action & EAction.ACT_GROUP_MASK) switch {
                     EAction.ACT_GROUP_STATIONARY => mario_execute_stationary_action(),
@@ -86,7 +88,7 @@ namespace SuperManual64.Player {
             }
 
             if (state.input.HasFlag(EInput.INPUT_NONZERO_ANALOG)) {
-                state.faceAngle.y = state.intendedYaw;
+                state.faceAngleYaw = state.intendedYaw;
                 state.forwardVel = Mathf.Min(state.intendedMag, 8);
                 state.action = EAction.ACT_WALKING;
                 return true;
@@ -124,7 +126,7 @@ namespace SuperManual64.Player {
             }
 
             if (state.input.HasFlag(EInput.INPUT_NONZERO_ANALOG)) {
-                state.faceAngle[1] = state.intendedYaw;
+                state.faceAngleYaw = state.intendedYaw;
                 return set_mario_action(EAction.ACT_WALKING, 0);
             }
 
@@ -140,14 +142,14 @@ namespace SuperManual64.Player {
         }
 
         bool mario_push_off_steep_floor(EAction action, int actionArg) {
-            int floorDYaw = state.floorAngle - state.faceAngle[1];
+            float floorDYaw = state.floorAngle - state.faceAngleYaw;
 
             if (floorDYaw is > (-0x4000) and < 0x4000) {
                 state.forwardVel = 16.0f;
-                state.faceAngle[1] = state.floorAngle;
+                state.faceAngleYaw = state.floorAngle;
             } else {
                 state.forwardVel = -16.0f;
-                state.faceAngle[1] = state.floorAngle + 0x8000;
+                state.faceAngleYaw = state.floorAngle + 180;
             }
 
             return set_mario_action(action, actionArg);
@@ -413,8 +415,6 @@ namespace SuperManual64.Player {
         }
 
         bool act_walking() {
-            int startYaw = state.faceAngle[1];
-
             mario_drop_held_object();
 
             if (state.shouldBeginSliding) {
@@ -469,7 +469,6 @@ namespace SuperManual64.Player {
             }
 
             //check_ledge_climb_down(m);
-            //tilt_body_walking(EAction. startYaw);
             return false;
         }
 
@@ -481,7 +480,7 @@ namespace SuperManual64.Player {
             mario_drop_held_object();
 
             if (state.actionState == 1) {
-                state.faceAngle[1] = state.actionArg;
+                state.faceAngleYaw = state.actionArg;
                 return set_mario_action(EAction.ACT_STANDING_AGAINST_WALL, 0);
             }
 
@@ -533,7 +532,7 @@ namespace SuperManual64.Player {
                 state.forwardVel = 48.0f;
             }
 
-            state.faceAngle[1] = state.intendedYaw - MathUtil.ApproachInt(state.intendedYaw - state.faceAngle[1], 0, 0x800, 0x800);
+            state.faceAngleYaw = Mathf.MoveTowardsAngle(state.faceAngleYaw, state.intendedYaw, 11.25f);
 
             apply_slope_accel();
         }
@@ -543,7 +542,7 @@ namespace SuperManual64.Player {
             var floor = state.floor;
             float steepness = Mathf.Sqrt((floor.normal.x * floor.normal.x) + (floor.normal.z * floor.normal.z));
 
-            int floorDYaw = state.floorAngle - state.faceAngle[1];
+            float floorDYaw = state.floorAngle - state.faceAngleYaw;
 
             if (state.floor.isSlope) {
                 ESurfaceClass slopeClass = 0;
@@ -566,7 +565,7 @@ namespace SuperManual64.Player {
                 }
             }
 
-            state.slideYaw = state.faceAngle[1];
+            state.slideYaw = state.faceAngleYaw;
         }
 
         bool apply_slope_decel(float decelCoef) {
@@ -589,10 +588,78 @@ namespace SuperManual64.Player {
         bool act_hold_walking() { return false; }
         bool act_hold_heavy_walking() { return false; }
         bool act_turning_around() {
-            Debug.Log("turning");
+            if (state.input.HasFlag(EInput.INPUT_ABOVE_SLIDE)) {
+                return set_mario_action(EAction.ACT_BEGIN_SLIDING, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_A_PRESSED)) {
+                return set_jumping_action(EAction.ACT_SIDE_FLIP, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_UNKNOWN_5)) {
+                return set_mario_action(EAction.ACT_BRAKING, 0);
+            }
+
+            if (!state.analogStickHeldBack) {
+                return set_mario_action(EAction.ACT_WALKING, 0);
+            }
+
+            if (apply_slope_decel(2.0f)) {
+                return begin_walking_action(8.0f, EAction.ACT_FINISH_TURNING_AROUND, 0);
+            }
+
+            switch (state.PerformGroundStep()) {
+                case EGroundStep.GROUND_STEP_LEFT_GROUND:
+                    set_mario_action(EAction.ACT_FREEFALL, 0);
+                    break;
+
+                case EGroundStep.GROUND_STEP_NONE:
+                    //state.particleFlags |= PARTICLE_DUST;
+                    break;
+            }
+
+            if (state.forwardVel >= 18.0f) {
+                marioObj.SetAnimation(EAnim.MARIO_ANIM_TURNING_PART1);
+            } else {
+                marioObj.SetAnimation(EAnim.MARIO_ANIM_TURNING_PART2);
+                if (marioObj.animInfo.isAnimAtEnd) {
+                    if (state.forwardVel > 0.0f) {
+                        begin_walking_action(-state.forwardVel, EAction.ACT_WALKING, 0);
+                    } else {
+                        begin_walking_action(8.0f, EAction.ACT_WALKING, 0);
+                    }
+                }
+            }
+
             return false;
         }
-        bool act_finish_turning_around() { return false; }
+        bool begin_walking_action(float forwardVel, EAction action, int actionArg) {
+            state.faceAngleYaw = state.intendedYaw;
+            state.forwardVel = forwardVel;
+            return set_mario_action(action, actionArg);
+        }
+        bool act_finish_turning_around() {
+            if (state.input.HasFlag(EInput.INPUT_ABOVE_SLIDE)) {
+                return set_mario_action(EAction.ACT_BEGIN_SLIDING, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_A_PRESSED)) {
+                return set_jumping_action(EAction.ACT_SIDE_FLIP, 0);
+            }
+
+            update_walking_speed();
+            marioObj.SetAnimation(EAnim.MARIO_ANIM_TURNING_PART2);
+
+            if (state.PerformGroundStep() == EGroundStep.GROUND_STEP_LEFT_GROUND) {
+                set_mario_action(EAction.ACT_FREEFALL, 0);
+            }
+
+            if (marioObj.animInfo.isAnimAtEnd) {
+                set_mario_action(EAction.ACT_WALKING, 0);
+            }
+
+            return false;
+        }
         bool act_braking() {
             if (!state.input.HasFlag(EInput.INPUT_FIRST_PERSON)
              && (state.input & (EInput.INPUT_NONZERO_ANALOG | EInput.INPUT_A_PRESSED | EInput.INPUT_OFF_FLOOR | EInput.INPUT_ABOVE_SLIDE)) != 0) {
@@ -771,17 +838,17 @@ namespace SuperManual64.Player {
         }
 
         void set_steep_jump_action() {
-            marioObj.oMarioSteepJumpYaw = state.faceAngle[1];
+            marioObj.oMarioSteepJumpYaw = state.faceAngleYaw;
 
             if (state.forwardVel > 0.0f) {
-                int angleTemp = state.floorAngle + 0x8000;
-                int faceAngleTemp = state.faceAngle[1] - angleTemp;
+                float angleTemp = state.floorAngle + 22.5f;
+                float faceAngleTemp = state.faceAngleYaw - angleTemp;
 
                 float y = Mathf.Sin(faceAngleTemp * Mathf.Deg2Rad) * state.forwardVel;
                 float x = Mathf.Cos(faceAngleTemp * Mathf.Deg2Rad) * state.forwardVel * 0.75f;
 
                 state.forwardVel = Mathf.Sqrt((y * y) + (x * x));
-                state.faceAngle[1] = Mathf.RoundToInt(Mathf.Atan2(x, y) + angleTemp);
+                state.faceAngleYaw = (Mathf.Atan2(x, y) * Mathf.Rad2Deg) + angleTemp;
             }
 
             drop_and_set_mario_action(EAction.ACT_STEEP_JUMP, 0);

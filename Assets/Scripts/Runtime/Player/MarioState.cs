@@ -11,7 +11,7 @@ namespace SuperManual64.Player {
         [SerializeField, Range(0, 64)]
         public float intendedMag;
         [SerializeField]
-        public int intendedYaw;
+        public float intendedYaw;
 
         public void UpdateIntentions(InputActionMap actions, Camera camera) {
             input = EInput.INPUT_NONE;
@@ -22,18 +22,19 @@ namespace SuperManual64.Player {
             intendedMag = Mathf.Clamp(64 * stick.sqrMagnitude, 0, 64);
 
             if (stick.sqrMagnitude > 0) {
-                intendedYaw = Mathf.RoundToInt((Mathf.Rad2Deg * Mathf.Atan2(-stick.y, stick.x)) + camera.transform.eulerAngles.y + 90);
+                intendedYaw = (Mathf.Rad2Deg * Mathf.Atan2(-stick.y, stick.x)) + camera.transform.eulerAngles.y + 90;
                 input |= EInput.INPUT_NONZERO_ANALOG;
             } else {
-                intendedYaw = faceAngle.y;
+                intendedYaw = faceAngleYaw;
                 input |= EInput.INPUT_UNKNOWN_5;
             }
         }
 
+        public float deltaYaw => Mathf.DeltaAngle(intendedYaw, faceAngleYaw);
+
         public bool analogStickHeldBack {
             get {
-                int intendedDYaw = intendedYaw - faceAngle[1];
-                return intendedDYaw is < (-0x471C) or > 0x471C;
+                return deltaYaw is < -100 or > 100;
             }
         }
 
@@ -53,11 +54,15 @@ namespace SuperManual64.Player {
 
         [Header("Physics")]
         [SerializeField]
-        public Vector3Int faceAngle;
+        public Vector3 faceAngle;
+        public float faceAngleYaw {
+            get => faceAngle.y;
+            set => faceAngle.y = value;
+        }
         [SerializeField]
         public Vector3Int angleVel;
         [SerializeField]
-        public int slideYaw;
+        public float slideYaw;
         [SerializeField]
         public int twirlYaw;
         [SerializeField]
@@ -71,8 +76,8 @@ namespace SuperManual64.Player {
             set {
                 m_forwardVel = value;
 
-                slideVelX = Mathf.Sin(faceAngle.y * Mathf.Deg2Rad) * value;
-                slideVelZ = Mathf.Cos(faceAngle.y * Mathf.Deg2Rad) * value;
+                slideVelX = Mathf.Sin(faceAngleYaw * Mathf.Deg2Rad) * value;
+                slideVelZ = Mathf.Cos(faceAngleYaw * Mathf.Deg2Rad) * value;
 
                 vel.x = slideVelX;
                 vel.z = slideVelZ;
@@ -89,17 +94,14 @@ namespace SuperManual64.Player {
         [SerializeField]
         public Surface floor;
         [SerializeField]
-        public int floorAngle;
+        public float floorAngle;
 
         public float floorHeight => pos.y;
 
         public bool isFacingDownhill {
             get {
-                int faceAngleYaw = faceAngle[1];
-
-                faceAngleYaw = floorAngle - faceAngleYaw;
-
-                return faceAngleYaw is > (-0x4000) and < 0x4000;
+                //return floorAngle - faceAngleYaw is > (-0x4000) and < 0x4000;
+                return false;
             }
         }
         public bool shouldBeginSliding {
