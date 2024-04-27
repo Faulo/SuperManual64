@@ -760,15 +760,16 @@ MonoBehaviour:
       m_Calls: []
   m_text: 'Special Thanks:
 
-    - To Matt Kempster, for his Super Mario 64 decompilation
+    - To Matt Kempster, for his decompilation of Super
+    Mario 64
+
+    - To bunnywhip and ripoof, for their Super Mario 64 fonts
 
     -
-    To bunnywhip and ripoof, for their Super Mario 64 fonts
+    To Nintendo of Europe, for the German manual of Super Mario 64
 
-    - To Nintendo of
-    Europe, for their Super Mario 64 manual
-
-    - To Nintendo, for Super Mario 64'
+    - To Nintendo,
+    for Super Mario 64'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: f61a7d03a01b6c646ae2be587da6d97c, type: 2}
   m_sharedMaterial: {fileID: -1943225748672091311, guid: f61a7d03a01b6c646ae2be587da6d97c,
