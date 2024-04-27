@@ -22,7 +22,7 @@ namespace SuperManual64.Player {
             intendedMag = Mathf.Clamp(64 * stick.sqrMagnitude, 0, 64);
 
             if (stick.sqrMagnitude > 0) {
-                intendedYaw = (Mathf.Rad2Deg * Mathf.Atan2(-stick.y, stick.x)) + camera.transform.eulerAngles.y + 90;
+                intendedYaw = (Mathf.Atan2(-stick.y, stick.x) * Mathf.Rad2Deg) + camera.transform.eulerAngles.y + 90;
                 input |= EInput.INPUT_NONZERO_ANALOG;
             } else {
                 intendedYaw = faceAngleYaw;
