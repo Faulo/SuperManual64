@@ -24,7 +24,8 @@ unityPipeline {
 	
 	// which platforms to deploy to
 	DEPLOY_TO_STEAM = '0'
-	DEPLOY_TO_ITCH = '0'
+	DEPLOY_TO_ITCH = '1'
+	DEPLOY_ON_FAILURE = '1'
 	
 	// configration for deploying to steam
 	STEAM_ID = ''
@@ -34,8 +35,8 @@ unityPipeline {
 	STEAM_CREDENTIALS = ''
 	
 	// configuration for deploying to itch
-	ITCH_ID = ''
-	ITCH_CREDENTIALS = ''
+    ITCH_ID = 'faulo/super-manual-64'
+	ITCH_CREDENTIALS = 'Faulo-itch.io'
 	
 	// configuration for deploying to Discord
 	REPORT_TO_DISCORD = '0'
