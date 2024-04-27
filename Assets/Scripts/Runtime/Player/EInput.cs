@@ -9,7 +9,7 @@ namespace SuperManual64.Player {
         INPUT_OFF_FLOOR = 0x0004,
         INPUT_ABOVE_SLIDE = 0x0008,
         INPUT_FIRST_PERSON = 0x0010,
-        INPUT_UNKNOWN_5 = 0x0020,
+        INPUT_NEITHER_STICK_NOR_A = 0x0020,
         INPUT_SQUISHED = 0x0040,
         INPUT_A_DOWN = 0x0080,
         INPUT_IN_POISON_GAS = 0x0100,

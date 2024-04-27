@@ -515,7 +515,7 @@ namespace SuperManual64.Player {
                 return true;
             }
 
-            if (state.input.HasFlag(EInput.INPUT_UNKNOWN_5)) {
+            if (state.input.HasFlag(EInput.INPUT_NEITHER_STICK_NOR_A)) {
                 return begin_braking_action();
             }
 
@@ -620,7 +620,7 @@ namespace SuperManual64.Player {
         bool check_ground_dive_or_punch() {
             if (state.input.HasFlag(EInput.INPUT_B_PRESSED)) {
                 //! Speed kick (shoutouts to SimpleFlips)
-                if (state.forwardVel >= 29.0f && state.intendedMag > 48.0f) {
+                if (state.forwardVel >= 29.0f && state.intendedMag > 24.0f) {
                     state.vel[1] = 20.0f;
                     return set_mario_action(EAction.ACT_DIVE, 1);
                 }
@@ -719,7 +719,7 @@ namespace SuperManual64.Player {
                 return set_jumping_action(EAction.ACT_SIDE_FLIP, 0);
             }
 
-            if (state.input.HasFlag(EInput.INPUT_UNKNOWN_5)) {
+            if (state.input.HasFlag(EInput.INPUT_NEITHER_STICK_NOR_A)) {
                 return set_mario_action(EAction.ACT_BRAKING, 0);
             }
 
@@ -980,7 +980,7 @@ namespace SuperManual64.Player {
             return false;
         }
         bool act_double_jump_land() {
-            if (common_landing_cancels(LandingAction.sDoubleJumpLandAction, set_jumping_action)) {
+            if (common_landing_cancels(LandingAction.sDoubleJumpLandAction, set_triple_jump_action)) {
                 return true;
             }
 
@@ -1266,7 +1266,7 @@ namespace SuperManual64.Player {
                 state.forwardVel = MathUtil.ApproachFloat(state.forwardVel, 0.0f, 0.35f, 0.35f);
 
                 if (state.input.HasFlag(EInput.INPUT_NONZERO_ANALOG)) {
-                    float intendedDYaw = state.intendedYaw - state.faceAngleYaw;
+                    float intendedDYaw = Mathf.DeltaAngle(state.intendedYaw, state.faceAngleYaw);
                     float intendedMag = state.intendedMag / 32.0f;
 
                     state.forwardVel += intendedMag * Mathf.Cos(intendedDYaw * Mathf.Deg2Rad) * 1.5f;
@@ -1285,8 +1285,8 @@ namespace SuperManual64.Player {
                 state.slideVelX = state.forwardVel * Mathf.Sin(state.faceAngleYaw * Mathf.Deg2Rad);
                 state.slideVelZ = state.forwardVel * Mathf.Cos(state.faceAngleYaw * Mathf.Deg2Rad);
 
-                state.slideVelX += sidewaysSpeed * Mathf.Sin((state.faceAngleYaw + 90) * Mathf.Deg2Rad);
-                state.slideVelZ += sidewaysSpeed * Mathf.Cos((state.faceAngleYaw + 90) * Mathf.Deg2Rad);
+                state.slideVelX += sidewaysSpeed * Mathf.Sin((state.faceAngleYaw - 90) * Mathf.Deg2Rad);
+                state.slideVelZ += sidewaysSpeed * Mathf.Cos((state.faceAngleYaw - 90) * Mathf.Deg2Rad);
 
                 state.vel[0] = state.slideVelX;
                 state.vel[2] = state.slideVelZ;
@@ -1455,6 +1455,7 @@ namespace SuperManual64.Player {
             // Initialize the action information.
             state.prevAction = state.action;
             state.action = action;
+            state.actionName = action.ToString().Split("ACT_")[^1].Replace('_', ' ');
             state.actionArg = actionArg;
             state.actionState = 0;
             state.actionTimer = 0;
@@ -1470,6 +1471,18 @@ namespace SuperManual64.Player {
             }
 
             return true;
+        }
+
+        bool set_triple_jump_action(EAction action, int actionArg) {
+            if (state.flags.HasFlag(EFlags.MARIO_WING_CAP)) {
+                return set_mario_action(EAction.ACT_FLYING_TRIPLE_JUMP, 0);
+            }
+
+            if (state.forwardVel > 20.0f) {
+                return set_mario_action(EAction.ACT_TRIPLE_JUMP, 0);
+            }
+
+            return set_mario_action(action, actionArg);
         }
 
         void set_steep_jump_action() {

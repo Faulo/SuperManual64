@@ -12,7 +12,7 @@ namespace SuperManual64.Player {
         public int framesSinceA;
         [SerializeField]
         public int framesSinceB;
-        [SerializeField, Range(0, 64)]
+        [SerializeField, Range(0, 32)]
         public float intendedMag;
         [SerializeField]
         public float intendedYaw;
@@ -26,19 +26,22 @@ namespace SuperManual64.Player {
         }
 
         public void UpdateIntentions() {
+            //particleFlags = 0;
             input = EInput.INPUT_NONE;
             flags &= (EFlags)0xFFFFFF;
 
             var stick = actions["Move"].ReadValue<Vector2>();
 
-            intendedMag = Mathf.Clamp(64 * stick.sqrMagnitude, 0, 64);
+            float maximumMag = squishTimer == 0
+                ? 32
+                : 8;
+            intendedMag = maximumMag * stick.sqrMagnitude;
 
             if (stick.sqrMagnitude > 0) {
                 intendedYaw = (Mathf.Atan2(-stick.y, stick.x) * Mathf.Rad2Deg) + camera.transform.eulerAngles.y + 90;
                 input |= EInput.INPUT_NONZERO_ANALOG;
             } else {
                 intendedYaw = faceAngleYaw;
-                input |= EInput.INPUT_UNKNOWN_5;
             }
 
             if (actions["A"].WasPressedThisFrame()) {
@@ -52,16 +55,20 @@ namespace SuperManual64.Player {
             // Don't update for these buttons if squished.
             if (squishTimer == 0) {
                 if (actions["B"].WasPressedThisFrame()) {
-                    input |= EInput.INPUT_B_PRESSED;
+                    //input |= EInput.INPUT_B_PRESSED;
                 }
 
                 if (actions["Z"].IsPressed()) {
-                    input |= EInput.INPUT_Z_DOWN;
+                    //input |= EInput.INPUT_Z_DOWN;
                 }
 
                 if (actions["Z"].WasPressedThisFrame()) {
-                    input |= EInput.INPUT_Z_PRESSED;
+                    //input |= EInput.INPUT_Z_PRESSED;
                 }
+            }
+
+            if (!input.HasFlag(EInput.INPUT_NONZERO_ANALOG) && !input.HasFlag(EInput.INPUT_A_PRESSED)) {
+                input |= EInput.INPUT_NEITHER_STICK_NOR_A;
             }
 
             if (input.HasFlag(EInput.INPUT_A_PRESSED)) {
@@ -75,6 +82,14 @@ namespace SuperManual64.Player {
             } else if (framesSinceB < 0xFF) {
                 framesSinceB++;
             }
+
+            if (wallKickTimer > 0) {
+                wallKickTimer--;
+            }
+
+            if (doubleJumpTimer > 0) {
+                doubleJumpTimer--;
+            }
         }
 
         public float deltaYaw => Mathf.DeltaAngle(intendedYaw, faceAngleYaw);
@@ -86,6 +101,8 @@ namespace SuperManual64.Player {
         }
 
         [Header("Actions")]
+        [SerializeField]
+        public string actionName;
         [SerializeField]
         public int actionArg;
         [SerializeField]
@@ -159,21 +176,13 @@ namespace SuperManual64.Player {
 
         public bool shouldGetStuckInGround => false;
 
-        [Header("Misc")]
+        [Header("Config")]
         [SerializeField]
         public bool hasSpecialTripleJump = false;
         [SerializeField]
-        public int health = 0x100;
+        public float gettingBlownGravity = 0;
         [SerializeField]
-        public int hurtCounter;
-        [SerializeField]
-        public int squishTimer;
-        [SerializeField]
-        public float peakHeight;
-        [SerializeField]
-        public int doubleJumpTimer;
-        [SerializeField]
-        public int wallKickTimer;
+        float unitMultiplier = 0.01f;
 
         public void UpdateHitbox() {
             if (action.HasFlag(EAction.ACT_FLAG_SHORT_HITBOX)) {
@@ -182,9 +191,6 @@ namespace SuperManual64.Player {
                 // 160
             }
         }
-
-        [SerializeField]
-        float unitMultiplier = 0.01f;
 
         public EGroundStep StationaryGroundStep() {
             forwardVel = 0;
@@ -259,8 +265,19 @@ namespace SuperManual64.Player {
             return EAirStep.AIR_STEP_NONE;
         }
 
+        [Header("Runtime Counters")]
         [SerializeField]
-        public float gettingBlownGravity;
+        public int health = 0x100;
+        [SerializeField]
+        public int hurtCounter;
+        [SerializeField]
+        public int doubleJumpTimer;
+        [SerializeField]
+        public int wallKickTimer;
+        [SerializeField]
+        public int squishTimer;
+        [SerializeField]
+        public float peakHeight;
 
         void ApplyGravity() {
             switch (action) {

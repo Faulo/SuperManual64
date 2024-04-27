@@ -22,7 +22,7 @@
             = new(4, 5, EAction.ACT_FREEFALL, EAction.ACT_DOUBLE_JUMP_LAND_STOP, EAction.ACT_JUMP, EAction.ACT_FREEFALL, EAction.ACT_BEGIN_SLIDING);
 
         public static readonly LandingAction sTripleJumpLandAction
-            = new(4, 0, EAction.ACT_FREEFALL, EAction.ACT_TRIPLE_JUMP_LAND_STOP, default, EAction.ACT_FREEFALL, EAction.ACT_BEGIN_SLIDING);
+            = new(4, 0, EAction.ACT_FREEFALL, EAction.ACT_TRIPLE_JUMP_LAND_STOP, EAction.ACT_UNINITIALIZED, EAction.ACT_FREEFALL, EAction.ACT_BEGIN_SLIDING);
 
         public static readonly LandingAction sBackflipLandAction
             = new(4, 0, EAction.ACT_FREEFALL, EAction.ACT_BACKFLIP_LAND_STOP, EAction.ACT_BACKFLIP, EAction.ACT_FREEFALL, EAction.ACT_BEGIN_SLIDING);
