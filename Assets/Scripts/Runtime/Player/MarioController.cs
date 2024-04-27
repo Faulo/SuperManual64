@@ -1490,6 +1490,8 @@ namespace SuperManual64.Player {
         }
 
         EAction set_mario_action_moving(EAction action, int actionArg) {
+            _ = actionArg;
+
             var floorClass = state.floor.surfaceClass;
             float forwardVel = state.forwardVel;
             float mag = Mathf.Min(state.intendedMag, 8.0f);
@@ -1655,9 +1657,11 @@ namespace SuperManual64.Player {
         }
 
         EAction set_mario_action_submerged(EAction action, int actionArg) {
+            _ = actionArg;
             return action;
         }
         EAction set_mario_action_cutscene(EAction action, int actionArg) {
+            _ = actionArg;
             return action;
         }
 

@@ -254,6 +254,8 @@ namespace SuperManual64.Player {
                 return EAirStep.AIR_STEP_LANDED;
             }
 
+            _ = stepArg;
+
             return EAirStep.AIR_STEP_NONE;
         }
 
