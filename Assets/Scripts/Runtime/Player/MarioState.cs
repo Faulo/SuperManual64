@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 namespace SuperManual64.Player {
     [CreateAssetMenu]
@@ -12,8 +13,11 @@ namespace SuperManual64.Player {
         [SerializeField]
         public int intendedYaw;
 
-        public void UpdateIntentions(Vector2 stick, Camera camera) {
+        public void UpdateIntentions(InputActionMap actions, Camera camera) {
             input = EInput.INPUT_NONE;
+            flags &= (EFlags)0xFFFFFF;
+
+            var stick = actions["Move"].ReadValue<Vector2>();
 
             intendedMag = Mathf.Clamp(64 * stick.sqrMagnitude, 0, 64);
 

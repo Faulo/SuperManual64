@@ -299,7 +299,10 @@ namespace SuperManual64.Player {
 
         bool act_hold_walking() { return false; }
         bool act_hold_heavy_walking() { return false; }
-        bool act_turning_around() { return false; }
+        bool act_turning_around() {
+            Debug.Log("turning");
+            return false;
+        }
         bool act_finish_turning_around() { return false; }
         bool act_braking() {
             if (!state.input.HasFlag(EInput.INPUT_FIRST_PERSON)

@@ -5,24 +5,25 @@ using UnityEngine.InputSystem;
 namespace SuperManual64.Player {
     sealed class MarioInput : MonoBehaviour {
         [SerializeField, Expandable]
+        InputActionAsset input;
+        [SerializeField, Expandable]
         MarioState state;
         [SerializeField, Expandable]
         Camera attachedCamera;
 
-        public void OnMove(InputValue stick) {
-            state.UpdateIntentions(stick.Get<Vector2>(), attachedCamera);
+        InputActionMap map;
+
+        void OnEnable() {
+            map = input.FindActionMap("Player");
+            map.Enable();
         }
 
-        public void OnA(InputValue button) {
-            Debug.Log($"A: {button.isPressed}");
+        void OnDisable() {
+            map.Disable();
         }
 
-        public void OnB(InputValue button) {
-            Debug.Log($"B: {button.isPressed}");
-        }
-
-        public void OnZ(InputValue button) {
-            Debug.Log($"Z: {button.isPressed}");
+        public void Update() {
+            state.UpdateIntentions(map, attachedCamera);
         }
     }
 }
