@@ -9,8 +9,7 @@ namespace SuperManual64.Player {
         MarioObject marioObj;
 
         void Start() {
-            state.pos = transform.position;
-            state.vel = Vector3.zero;
+            state.Spawn(transform.position);
         }
 
         void FixedUpdate() {
