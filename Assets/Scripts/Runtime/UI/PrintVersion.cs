@@ -1,11 +1,11 @@
 using TMPro;
 using UnityEngine;
 
-namespace SuperManual64 {
+namespace SuperManual64.UI {
     [ExecuteAlways]
     sealed class PrintVersion : MonoBehaviour {
         [SerializeField]
-        TextMeshProUGUI _textComponent;
+        TextMeshProUGUI textComponent;
 
         void Start() {
             UpdateText();
@@ -16,8 +16,8 @@ namespace SuperManual64 {
         }
 #endif
         void UpdateText() {
-            if (_textComponent) {
-                _textComponent.text = $"{Application.productName} v{Application.version}";
+            if (textComponent) {
+                textComponent.text = $"{Application.productName} v{Application.version}";
             }
         }
     }

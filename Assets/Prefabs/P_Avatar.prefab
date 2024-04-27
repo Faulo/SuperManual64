@@ -564,5 +564,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8723f278f53609e4dbf66a1d982f7fa3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  text: {fileID: 1196725674212194176}
+  textComponent: {fileID: 1196725674212194176}
   state: {fileID: 11400000, guid: 3e0a18d4f99537f4fb9ccb4af7acba33, type: 2}

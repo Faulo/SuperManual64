@@ -13,8 +13,11 @@ MonoBehaviour:
   m_Name: New Mario State
   m_EditorClassIdentifier: 
   input: 32
+  framesSinceA: 0
+  framesSinceB: 0
   intendedMag: 0
   intendedYaw: 82
+  actionName: TEST
   actionArg: 0
   actionState: 0
   actionTimer: 0
@@ -31,5 +34,12 @@ MonoBehaviour:
   ceil: {fileID: 0}
   floor: {fileID: 11400000, guid: 1ae5889db2664884a988c006c9d0a450, type: 2}
   floorAngle: 0
-  health: 256
+  hasSpecialTripleJump: 0
+  gettingBlownGravity: 0
   unitMultiplier: 0.01
+  health: 256
+  hurtCounter: 0
+  doubleJumpTimer: 0
+  wallKickTimer: 0
+  squishTimer: 0
+  peakHeight: 0

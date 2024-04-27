@@ -1,16 +1,20 @@
 using Slothsoft.UnityExtensions;
+using SuperManual64.Player;
 using TMPro;
 using UnityEngine;
 
-namespace SuperManual64.Player {
+namespace SuperManual64.UI {
+    [ExecuteAlways]
     sealed class PrintAction : MonoBehaviour {
         [SerializeField]
-        TextMeshProUGUI text;
+        TextMeshProUGUI textComponent;
         [SerializeField, Expandable]
         MarioState state;
 
         void Update() {
-            text.text = state.actionName;
+            if (textComponent && state) {
+                textComponent.text = state.actionName;
+            }
         }
     }
 }
