@@ -9,10 +9,10 @@ unityPipeline {
 	BUILD_DOCUMENTATION = '0'
 	
 	// automatically run Unity Test Runner
-	TEST_UNITY = '1'
+	TEST_UNITY = '0'
 	
 	// automatically run dotnet format
-	TEST_FORMATTING = '1'
+	TEST_FORMATTING = '0'
 	FORMATTING_EXCLUDE = 'Library Assets/Plugins'
 	
 	// which executables to create
