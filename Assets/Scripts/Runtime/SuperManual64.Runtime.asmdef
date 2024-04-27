@@ -6,7 +6,8 @@
         "MyBox",
         "Slothsoft.UnityExtensions",
         "Cinemachine",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "System.Runtime.CompilerServices"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

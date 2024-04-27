@@ -1,5 +1,4 @@
-﻿
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace SuperManual64.Player {
     [CreateAssetMenu]
@@ -39,6 +38,18 @@ namespace SuperManual64.Player {
         public bool isSteep {
             get {
                 return false;
+            }
+        }
+
+        public bool isSlippery {
+            get {
+                float normY = type switch {
+                    ESurface.SURFACE_VERY_SLIPPERY => 0.9848077f,//~cos(10 deg)
+                    ESurface.SURFACE_SLIPPERY => 0.9396926f,//~cos(20 deg)
+                    ESurface.SURFACE_NOT_SLIPPERY => 0.0f,
+                    _ => 0.7880108f,//~cos(38 deg)
+                };
+                return normal.y <= normY;
             }
         }
     }

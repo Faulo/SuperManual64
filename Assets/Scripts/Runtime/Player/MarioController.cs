@@ -1,8 +1,12 @@
-﻿using Slothsoft.UnityExtensions;
+﻿using System;
+using Slothsoft.UnityExtensions;
 using UnityEngine;
 
 namespace SuperManual64.Player {
     sealed class MarioController : MonoBehaviour {
+        public event Action<int, int> onRumble;
+        public event Action<ECameraShake> onCameraShake;
+
         [SerializeField, Expandable]
         MarioState state;
         [SerializeField, Expandable]
@@ -15,10 +19,13 @@ namespace SuperManual64.Player {
         void FixedUpdate() {
             marioObj.AdvanceAnimation();
 
+            state.UpdateIntentions();
+
             for (bool inLoop = true; inLoop;) {
                 inLoop = (state.action & EAction.ACT_GROUP_MASK) switch {
                     EAction.ACT_GROUP_STATIONARY => mario_execute_stationary_action(),
                     EAction.ACT_GROUP_MOVING => mario_execute_moving_action(),
+                    EAction.ACT_GROUP_AIRBORNE => mario_execute_airborne_action(),
                     _ => false,
                 };
             }
@@ -68,7 +75,7 @@ namespace SuperManual64.Player {
                 EAction.ACT_BRAKING_STOP => act_braking_stop(),
                 EAction.ACT_BUTT_SLIDE_STOP => act_butt_slide_stop(),
                 EAction.ACT_HOLD_BUTT_SLIDE_STOP => act_hold_butt_slide_stop(),
-                _ => throw new System.NotImplementedException(state.action.ToString()),
+                _ => throw new NotImplementedException(state.action.ToString()),
             };
         }
 
@@ -232,19 +239,76 @@ namespace SuperManual64.Player {
             return false;
         }
         bool act_jump_land_stop() {
-            state.StationaryGroundStep();
+            if (check_common_landing_cancels(EAction.ACT_UNINITIALIZED)) {
+                return true;
+            }
+
+            landing_step(EAnim.MARIO_ANIM_LAND_FROM_SINGLE_JUMP, EAction.ACT_IDLE);
+
             return false;
         }
-        bool act_double_jump_land_stop() {
+
+        bool check_common_landing_cancels(EAction action) {
+            if (state.input.HasFlag(EInput.INPUT_STOMPED)) {
+                return set_mario_action(EAction.ACT_SHOCKWAVE_BOUNCE, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_FIRST_PERSON)) {
+                return set_mario_action(EAction.ACT_IDLE, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_A_PRESSED)) {
+                if (action == EAction.ACT_UNINITIALIZED) {
+                    return set_jump_from_landing();
+                } else {
+                    return set_jumping_action(action, 0);
+                }
+            }
+
+            if ((state.input & (EInput.INPUT_NONZERO_ANALOG | EInput.INPUT_A_PRESSED | EInput.INPUT_OFF_FLOOR | EInput.INPUT_ABOVE_SLIDE)) != 0) {
+                return check_common_action_exits();
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_B_PRESSED)) {
+                return set_mario_action(EAction.ACT_PUNCHING, 0);
+            }
+
+            return false;
+        }
+
+        bool landing_step(EAnim animation, EAction action) {
             state.StationaryGroundStep();
+
+            marioObj.SetAnimation(animation);
+            if (marioObj.animInfo.isAnimAtEnd) {
+                return set_mario_action(action, 0);
+            }
+
+            return false;
+        }
+
+        bool act_double_jump_land_stop() {
+            if (check_common_landing_cancels(EAction.ACT_UNINITIALIZED)) {
+                return true;
+            }
+
+            landing_step(EAnim.MARIO_ANIM_LAND_FROM_DOUBLE_JUMP, EAction.ACT_IDLE);
             return false;
         }
         bool act_freefall_land_stop() {
-            state.StationaryGroundStep();
+            if (check_common_landing_cancels(EAction.ACT_UNINITIALIZED)) {
+                return true;
+            }
+
+            landing_step(EAnim.MARIO_ANIM_GENERAL_LAND, EAction.ACT_IDLE);
             return false;
         }
         bool act_side_flip_land_stop() {
-            state.StationaryGroundStep();
+            if (check_common_landing_cancels(EAction.ACT_UNINITIALIZED)) {
+                return true;
+            }
+
+            landing_step(EAnim.MARIO_ANIM_GENERAL_LAND, EAction.ACT_IDLE);
             return false;
         }
         bool act_hold_jump_land_stop() {
@@ -268,15 +332,33 @@ namespace SuperManual64.Player {
             return false;
         }
         bool act_triple_jump_land_stop() {
-            state.StationaryGroundStep();
+            if (check_common_landing_cancels(EAction.ACT_JUMP)) {
+                return true;
+            }
+
+            landing_step(EAnim.MARIO_ANIM_TRIPLE_JUMP_LAND, EAction.ACT_IDLE);
             return false;
         }
         bool act_backflip_land_stop() {
-            state.StationaryGroundStep();
+            if (!state.input.HasFlag(EInput.INPUT_Z_DOWN)) {
+                state.input &= ~EInput.INPUT_A_PRESSED;
+            }
+
+            if (check_common_landing_cancels(EAction.ACT_BACKFLIP)) {
+                return true;
+            }
+
+            landing_step(EAnim.MARIO_ANIM_TRIPLE_JUMP_LAND, EAction.ACT_IDLE);
             return false;
         }
         bool act_long_jump_land_stop() {
-            state.StationaryGroundStep();
+            state.input &= ~EInput.INPUT_B_PRESSED;
+
+            if (check_common_landing_cancels(EAction.ACT_JUMP)) {
+                return true;
+            }
+
+            landing_step(marioObj.oMarioLongJumpIsSlow ? EAnim.MARIO_ANIM_CROUCH_FROM_SLOW_LONGJUMP : EAnim.MARIO_ANIM_CROUCH_FROM_FAST_LONGJUMP, EAction.ACT_CROUCHING);
             return false;
         }
         bool act_ground_pound_land() {
@@ -372,7 +454,7 @@ namespace SuperManual64.Player {
                 EAction.ACT_QUICKSAND_JUMP_LAND => act_quicksand_jump_land(),
                 EAction.ACT_HOLD_QUICKSAND_JUMP_LAND => act_hold_quicksand_jump_land(),
                 EAction.ACT_LONG_JUMP_LAND => act_long_jump_land(),
-                _ => throw new System.NotImplementedException(state.action.ToString()),
+                _ => throw new NotImplementedException(state.action.ToString()),
             };
         }
 
@@ -468,11 +550,52 @@ namespace SuperManual64.Player {
                     break;
             }
 
-            //check_ledge_climb_down(m);
+            //check_ledge_climb_down();
             return false;
         }
 
         bool set_jump_from_landing() {
+            if (state.floor.isSteep) {
+                set_steep_jump_action();
+            } else {
+                if ((state.doubleJumpTimer == 0) || (state.squishTimer != 0)) {
+                    set_mario_action(EAction.ACT_JUMP, 0);
+                } else {
+                    switch (state.prevAction) {
+                        case EAction.ACT_JUMP_LAND:
+                            set_mario_action(EAction.ACT_DOUBLE_JUMP, 0);
+                            break;
+
+                        case EAction.ACT_FREEFALL_LAND:
+                            set_mario_action(EAction.ACT_DOUBLE_JUMP, 0);
+                            break;
+
+                        case EAction.ACT_SIDE_FLIP_LAND_STOP:
+                            set_mario_action(EAction.ACT_DOUBLE_JUMP, 0);
+                            break;
+
+                        case EAction.ACT_DOUBLE_JUMP_LAND:
+                            // If Mario has a wing cap, he ignores the typical speed
+                            // requirement for a triple jump.
+                            if (state.flags.HasFlag(EFlags.MARIO_WING_CAP)) {
+                                set_mario_action(EAction.ACT_FLYING_TRIPLE_JUMP, 0);
+                            } else if (state.forwardVel > 20.0f) {
+                                set_mario_action(EAction.ACT_TRIPLE_JUMP, 0);
+                            } else {
+                                set_mario_action(EAction.ACT_JUMP, 0);
+                            }
+
+                            break;
+
+                        default:
+                            set_mario_action(EAction.ACT_JUMP, 0);
+                            break;
+                    }
+                }
+            }
+
+            state.doubleJumpTimer = 0;
+
             return true;
         }
 
@@ -729,7 +852,7 @@ namespace SuperManual64.Player {
                     break;
                 case EGroundStep.GROUND_STEP_HIT_WALL:
                     if (slopeClass == ESurfaceClass.SURFACE_CLASS_VERY_SLIPPERY) {
-                        // mario_bonk_reflection(m, TRUE);
+                        // mario_bonk_reflection(TRUE);
                     } else {
                         state.forwardVel = 0;
                     }
@@ -767,18 +890,530 @@ namespace SuperManual64.Player {
         bool act_soft_forward_ground_kb() { return false; }
         bool act_ground_bonk() { return false; }
         bool act_death_exit_land() { return false; }
-        bool act_jump_land() { return false; }
-        bool act_freefall_land() { return false; }
-        bool act_double_jump_land() { return false; }
-        bool act_side_flip_land() { return false; }
-        bool act_hold_jump_land() { return false; }
-        bool act_hold_freefall_land() { return false; }
-        bool act_triple_jump_land() { return false; }
-        bool act_backflip_land() { return false; }
-        bool act_quicksand_jump_land() { return false; }
-        bool act_hold_quicksand_jump_land() { return false; }
-        bool act_long_jump_land() { return false; }
+        bool act_jump_land() {
+            if (common_landing_cancels(LandingAction.sJumpLandAction, set_jumping_action)) {
+                return true;
+            }
 
+            common_landing_action(EAnim.MARIO_ANIM_LAND_FROM_SINGLE_JUMP, EAction.ACT_FREEFALL);
+
+            return false;
+        }
+
+        bool common_landing_cancels(LandingAction landingAction, Func<EAction, int, bool> setAPressAction) {
+            if (state.floor.normal.y < 0.2923717f) {
+                return mario_push_off_steep_floor(landingAction.verySteepAction, 0);
+            }
+
+            state.doubleJumpTimer = landingAction.unk02;
+
+            if (state.shouldBeginSliding) {
+                return set_mario_action(landingAction.slideAction, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_FIRST_PERSON)) {
+                return set_mario_action(landingAction.endAction, 0);
+            }
+
+            if (++state.actionTimer >= landingAction.numFrames) {
+                return set_mario_action(landingAction.endAction, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_A_PRESSED)) {
+                return setAPressAction(landingAction.aPressedAction, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_OFF_FLOOR)) {
+                return set_mario_action(landingAction.offFloorAction, 0);
+            }
+
+            return false;
+        }
+
+        void common_landing_action(EAnim animation, EAction airAction) {
+            if (state.input.HasFlag(EInput.INPUT_NONZERO_ANALOG)) {
+                apply_landing_accel(0.98f);
+            } else if (state.forwardVel >= 16.0f) {
+                apply_slope_decel(2.0f);
+            } else {
+                state.vel[1] = 0.0f;
+            }
+
+            switch (state.PerformGroundStep()) {
+                case EGroundStep.GROUND_STEP_LEFT_GROUND:
+                    set_mario_action(airAction, 0);
+                    break;
+
+                case EGroundStep.GROUND_STEP_HIT_WALL:
+                    break;
+            }
+
+            if (state.forwardVel > 16.0f) {
+                //state.particleFlags |= PARTICLE_DUST;
+            }
+
+            marioObj.SetAnimation(animation);
+        }
+
+        bool apply_landing_accel(float frictionFactor) {
+            bool stopped = false;
+
+            apply_slope_accel();
+
+            if (!state.floor.isSlope) {
+                state.forwardVel *= frictionFactor;
+                if (state.forwardVel * state.forwardVel < 1.0f) {
+                    state.forwardVel = 0;
+                    stopped = true;
+                }
+            }
+
+            return stopped;
+        }
+
+        bool act_freefall_land() {
+            if (common_landing_cancels(LandingAction.sFreefallLandAction, set_jumping_action)) {
+                return true;
+            }
+
+            common_landing_action(EAnim.MARIO_ANIM_GENERAL_LAND, EAction.ACT_FREEFALL);
+            return false;
+        }
+        bool act_double_jump_land() {
+            if (common_landing_cancels(LandingAction.sDoubleJumpLandAction, set_jumping_action)) {
+                return true;
+            }
+
+            common_landing_action(EAnim.MARIO_ANIM_LAND_FROM_DOUBLE_JUMP, EAction.ACT_FREEFALL);
+            return false;
+        }
+        bool act_side_flip_land() {
+            if (common_landing_cancels(LandingAction.sSideFlipLandAction, set_jumping_action)) {
+                return true;
+            }
+
+            common_landing_action(EAnim.MARIO_ANIM_SLIDEFLIP_LAND, EAction.ACT_FREEFALL);
+            return false;
+        }
+        bool act_hold_jump_land() {
+            if (common_landing_cancels(LandingAction.sHoldJumpLandAction, set_jumping_action)) {
+                return true;
+            }
+
+            common_landing_action(EAnim.MARIO_ANIM_JUMP_LAND_WITH_LIGHT_OBJ, EAction.ACT_HOLD_FREEFALL);
+            return false;
+        }
+        bool act_hold_freefall_land() {
+            if (common_landing_cancels(LandingAction.sHoldFreefallLandAction, set_jumping_action)) {
+                return true;
+            }
+
+            common_landing_action(EAnim.MARIO_ANIM_FALL_LAND_WITH_LIGHT_OBJ, EAction.ACT_HOLD_FREEFALL);
+            return false;
+        }
+        bool act_triple_jump_land() {
+            state.input &= ~EInput.INPUT_A_PRESSED;
+
+            if (common_landing_cancels(LandingAction.sTripleJumpLandAction, set_jumping_action)) {
+                return true;
+            }
+
+            common_landing_action(EAnim.MARIO_ANIM_TRIPLE_JUMP_LAND, EAction.ACT_FREEFALL);
+            return false;
+        }
+        bool act_backflip_land() {
+            if (!state.input.HasFlag(EInput.INPUT_Z_DOWN)) {
+                state.input &= ~EInput.INPUT_A_PRESSED;
+            }
+
+            if (common_landing_cancels(LandingAction.sBackflipLandAction, set_jumping_action)) {
+                return true;
+            }
+
+            common_landing_action(EAnim.MARIO_ANIM_TRIPLE_JUMP_LAND, EAction.ACT_FREEFALL);
+            return false;
+        }
+        bool act_quicksand_jump_land() {
+            return false;
+        }
+        bool act_hold_quicksand_jump_land() {
+            return false;
+        }
+        bool act_long_jump_land() {
+            if (!state.input.HasFlag(EInput.INPUT_Z_DOWN)) {
+                state.input &= ~EInput.INPUT_A_PRESSED;
+            }
+
+            if (common_landing_cancels(LandingAction.sLongJumpLandAction, set_jumping_action)) {
+                return true;
+            }
+
+            common_landing_action(marioObj.oMarioLongJumpIsSlow ? EAnim.MARIO_ANIM_CROUCH_FROM_SLOW_LONGJUMP : EAnim.MARIO_ANIM_CROUCH_FROM_FAST_LONGJUMP, EAction.ACT_FREEFALL);
+            return false;
+        }
+
+        #endregion
+
+        #region airborne
+        bool mario_execute_airborne_action() {
+            if (check_common_airborne_cancels()) {
+                return true;
+            }
+
+            return state.action switch {
+                EAction.ACT_JUMP => act_jump(),
+                EAction.ACT_DOUBLE_JUMP => act_double_jump(),
+                EAction.ACT_FREEFALL => act_freefall(),
+                EAction.ACT_HOLD_JUMP => act_hold_jump(),
+                EAction.ACT_HOLD_FREEFALL => act_hold_freefall(),
+                EAction.ACT_SIDE_FLIP => act_side_flip(),
+                EAction.ACT_WALL_KICK_AIR => act_wall_kick_air(),
+                EAction.ACT_TWIRLING => act_twirling(),
+                EAction.ACT_WATER_JUMP => act_water_jump(),
+                EAction.ACT_HOLD_WATER_JUMP => act_hold_water_jump(),
+                EAction.ACT_STEEP_JUMP => act_steep_jump(),
+                EAction.ACT_BURNING_JUMP => act_burning_jump(),
+                EAction.ACT_BURNING_FALL => act_burning_fall(),
+                EAction.ACT_TRIPLE_JUMP => act_triple_jump(),
+                EAction.ACT_BACKFLIP => act_backflip(),
+                EAction.ACT_LONG_JUMP => act_long_jump(),
+                EAction.ACT_RIDING_SHELL_JUMP => act_riding_shell_air(),
+                EAction.ACT_RIDING_SHELL_FALL => act_riding_shell_air(),
+                EAction.ACT_DIVE => act_dive(),
+                EAction.ACT_AIR_THROW => act_air_throw(),
+                EAction.ACT_BACKWARD_AIR_KB => act_backward_air_kb(),
+                EAction.ACT_FORWARD_AIR_KB => act_forward_air_kb(),
+                EAction.ACT_HARD_FORWARD_AIR_KB => act_hard_forward_air_kb(),
+                EAction.ACT_HARD_BACKWARD_AIR_KB => act_hard_backward_air_kb(),
+                EAction.ACT_SOFT_BONK => act_soft_bonk(),
+                EAction.ACT_AIR_HIT_WALL => act_air_hit_wall(),
+                EAction.ACT_FORWARD_ROLLOUT => act_forward_rollout(),
+                EAction.ACT_SHOT_FROM_CANNON => act_shot_from_cannon(),
+                EAction.ACT_BUTT_SLIDE_AIR => act_butt_slide_air(),
+                EAction.ACT_HOLD_BUTT_SLIDE_AIR => act_hold_butt_slide_air(),
+                EAction.ACT_LAVA_BOOST => act_lava_boost(),
+                EAction.ACT_GETTING_BLOWN => act_getting_blown(),
+                EAction.ACT_BACKWARD_ROLLOUT => act_backward_rollout(),
+                EAction.ACT_CRAZY_BOX_BOUNCE => act_crazy_box_bounce(),
+                EAction.ACT_SPECIAL_TRIPLE_JUMP => act_special_triple_jump(),
+                EAction.ACT_GROUND_POUND => act_ground_pound(),
+                EAction.ACT_THROWN_FORWARD => act_thrown_forward(),
+                EAction.ACT_THROWN_BACKWARD => act_thrown_backward(),
+                EAction.ACT_FLYING_TRIPLE_JUMP => act_flying_triple_jump(),
+                EAction.ACT_SLIDE_KICK => act_slide_kick(),
+                EAction.ACT_JUMP_KICK => act_jump_kick(),
+                EAction.ACT_FLYING => act_flying(),
+                EAction.ACT_RIDING_HOOT => act_riding_hoot(),
+                EAction.ACT_TOP_OF_POLE_JUMP => act_top_of_pole_jump(),
+                EAction.ACT_VERTICAL_WIND => act_vertical_wind(),
+                _ => throw new NotImplementedException(state.action.ToString()),
+            };
+        }
+
+        bool act_jump() {
+            if (check_kick_or_dive_in_air()) {
+                return true;
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_Z_PRESSED)) {
+                return set_mario_action(EAction.ACT_GROUND_POUND, 0);
+            }
+
+            common_air_action_step(EAction.ACT_JUMP_LAND, EAnim.MARIO_ANIM_SINGLE_JUMP, EAirStep.AIR_STEP_CHECK_LEDGE_GRAB | EAirStep.AIR_STEP_CHECK_HANG);
+            return false;
+        }
+
+        bool check_kick_or_dive_in_air() {
+            if (state.input.HasFlag(EInput.INPUT_B_PRESSED)) {
+                return set_mario_action(state.forwardVel > 28.0f ? EAction.ACT_DIVE : EAction.ACT_JUMP_KICK, 0);
+            }
+
+            return false;
+        }
+
+        void common_air_action_step(EAction landAction, EAnim animation, EAirStep stepArg) {
+            update_air_without_turn();
+
+            switch (state.PerformAirStep(stepArg)) {
+                case EAirStep.AIR_STEP_NONE:
+                    marioObj.SetAnimation(animation);
+                    break;
+
+                case EAirStep.AIR_STEP_LANDED:
+                    if (!check_fall_damage_or_get_stuck(EAction.ACT_HARD_BACKWARD_GROUND_KB)) {
+                        set_mario_action(landAction, 0);
+                    }
+
+                    break;
+
+                case EAirStep.AIR_STEP_HIT_WALL:
+                    marioObj.SetAnimation(animation);
+
+                    if (state.forwardVel > 16.0f) {
+                        onRumble?.Invoke(5, 40);
+                        mario_bonk_reflection(false);
+                        state.faceAngleYaw += 180;
+
+                        if (state.wall) {
+                            set_mario_action(EAction.ACT_AIR_HIT_WALL, 0);
+                        } else {
+                            if (state.vel[1] > 0.0f) {
+                                state.vel[1] = 0.0f;
+                            }
+
+                            //! Hands-free holding. Bonking while no wall is referenced
+                            // sets Mario's action to a non-holding action without
+                            // dropping the object, causing the hands-free holding
+                            // glitch. This can be achieved using an exposed ceiling,
+                            // out of bounds, grazing the bottom of a wall while
+                            // falling such that the final quarter step does not find a
+                            // wall collision, or by rising into the top of a wall such
+                            // that the final quarter step detects a ledge, but you are
+                            // not able to ledge grab it.
+                            if (state.forwardVel >= 38.0f) {
+                                //state.particleFlags |= PARTICLE_VERTICAL_STAR;
+                                set_mario_action(EAction.ACT_BACKWARD_AIR_KB, 0);
+                            } else {
+                                if (state.forwardVel > 8.0f) {
+                                    state.forwardVel = -8.0f;
+                                }
+
+                                set_mario_action(EAction.ACT_SOFT_BONK, 0);
+                                return;
+                            }
+                        }
+                    } else {
+                        state.forwardVel = 0;
+                    }
+
+                    break;
+
+                case EAirStep.AIR_STEP_GRABBED_LEDGE:
+                    marioObj.SetAnimation(EAnim.MARIO_ANIM_IDLE_ON_LEDGE);
+                    drop_and_set_mario_action(EAction.ACT_LEDGE_GRAB, 0);
+                    break;
+
+                case EAirStep.AIR_STEP_GRABBED_CEILING:
+                    set_mario_action(EAction.ACT_START_HANGING, 0);
+                    break;
+
+                case EAirStep.AIR_STEP_HIT_LAVA_WALL:
+                    // lava_boost_on_wall(m);
+                    break;
+            }
+        }
+
+        void mario_bonk_reflection(bool negateSpeed) {
+            if (state.wall) {
+                float wallAngle = Mathf.Atan2(state.wall.normal.z, state.wall.normal.x) * Mathf.Rad2Deg;
+                state.faceAngleYaw = wallAngle - (state.faceAngleYaw - wallAngle);
+            }
+
+            if (negateSpeed) {
+                state.forwardVel = -state.forwardVel;
+            } else {
+                state.faceAngleYaw += 180;
+            }
+        }
+
+        bool check_fall_damage_or_get_stuck(EAction hardFallAction) {
+            if (state.shouldGetStuckInGround) {
+                //state.particleFlags |= PARTICLE_MIST_CIRCLE;
+                drop_and_set_mario_action(EAction.ACT_FEET_STUCK_IN_GROUND, 0);
+                onRumble?.Invoke(5, 80);
+                return true;
+            }
+
+            return check_fall_damage(hardFallAction);
+        }
+
+        bool check_fall_damage(EAction hardFallAction) {
+            float fallHeight = state.peakHeight - state.pos[1];
+
+            float damageHeight = state.action == EAction.ACT_GROUND_POUND
+                ? 600.0f
+                : 1150.0f;
+
+            if (state.action != EAction.ACT_TWIRLING && state.floor.type != ESurface.SURFACE_BURNING) {
+                if (state.vel[1] < -55.0f) {
+                    if (fallHeight > 3000.0f) {
+                        state.hurtCounter += state.flags.HasFlag(EFlags.MARIO_CAP_ON_HEAD)
+                            ? 16
+                            : 24;
+                        onRumble?.Invoke(5, 80);
+                        onCameraShake?.Invoke(ECameraShake.SHAKE_FALL_DAMAGE);
+                        return drop_and_set_mario_action(hardFallAction, 4);
+                    } else if (fallHeight > damageHeight && !state.floor.isSlippery) {
+                        state.hurtCounter += state.flags.HasFlag(EFlags.MARIO_CAP_ON_HEAD)
+                            ? 8
+                            : 12;
+                        state.squishTimer = 30;
+                        onRumble?.Invoke(5, 80);
+                        onCameraShake?.Invoke(ECameraShake.SHAKE_FALL_DAMAGE);
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        void update_air_without_turn() {
+            if (!check_horizontal_wind()) {
+                float sidewaysSpeed = 0.0f;
+                float dragThreshold = state.action == EAction.ACT_LONG_JUMP
+                    ? 48.0f
+                    : 32.0f;
+                state.forwardVel = MathUtil.ApproachFloat(state.forwardVel, 0.0f, 0.35f, 0.35f);
+
+                if (state.input.HasFlag(EInput.INPUT_NONZERO_ANALOG)) {
+                    float intendedDYaw = state.intendedYaw - state.faceAngleYaw;
+                    float intendedMag = state.intendedMag / 32.0f;
+
+                    state.forwardVel += intendedMag * Mathf.Cos(intendedDYaw * Mathf.Deg2Rad) * 1.5f;
+                    sidewaysSpeed = intendedMag * Mathf.Sin(intendedDYaw * Mathf.Deg2Rad) * 10.0f;
+                }
+
+                //! Uncapped air speed. Net positive when moving forward.
+                if (state.forwardVel > dragThreshold) {
+                    state.forwardVel -= 1.0f;
+                }
+
+                if (state.forwardVel < -16.0f) {
+                    state.forwardVel += 2.0f;
+                }
+
+                state.slideVelX = state.forwardVel * Mathf.Sin(state.faceAngleYaw * Mathf.Deg2Rad);
+                state.slideVelZ = state.forwardVel * Mathf.Cos(state.faceAngleYaw * Mathf.Deg2Rad);
+
+                state.slideVelX += sidewaysSpeed * Mathf.Sin((state.faceAngleYaw + 90) * Mathf.Deg2Rad);
+                state.slideVelZ += sidewaysSpeed * Mathf.Cos((state.faceAngleYaw + 90) * Mathf.Deg2Rad);
+
+                state.vel[0] = state.slideVelX;
+                state.vel[2] = state.slideVelZ;
+            }
+        }
+
+        bool check_horizontal_wind() => false;
+
+        bool act_double_jump() {
+            var animation = (state.vel[1] >= 0.0f)
+                ? EAnim.MARIO_ANIM_DOUBLE_JUMP_RISE
+                : EAnim.MARIO_ANIM_DOUBLE_JUMP_FALL;
+
+            if (check_kick_or_dive_in_air()) {
+                return true;
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_Z_PRESSED)) {
+                return set_mario_action(EAction.ACT_GROUND_POUND, 0);
+            }
+
+            common_air_action_step(EAction.ACT_DOUBLE_JUMP_LAND, animation, EAirStep.AIR_STEP_CHECK_LEDGE_GRAB | EAirStep.AIR_STEP_CHECK_HANG);
+
+            return false;
+        }
+        bool act_freefall() {
+            if (state.input.HasFlag(EInput.INPUT_B_PRESSED)) {
+                return set_mario_action(EAction.ACT_DIVE, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_Z_PRESSED)) {
+                return set_mario_action(EAction.ACT_GROUND_POUND, 0);
+            }
+
+            var animation = state.actionArg switch {
+                1 => EAnim.MARIO_ANIM_FALL_FROM_SLIDE,
+                2 => EAnim.MARIO_ANIM_FALL_FROM_SLIDE_KICK,
+                _ => EAnim.MARIO_ANIM_GENERAL_FALL,
+            };
+
+            common_air_action_step(EAction.ACT_FREEFALL_LAND, animation, EAirStep.AIR_STEP_CHECK_LEDGE_GRAB);
+            return false;
+        }
+        bool act_hold_jump() { return false; }
+        bool act_hold_freefall() { return false; }
+        bool act_side_flip() {
+            if (state.input.HasFlag(EInput.INPUT_B_PRESSED)) {
+                return set_mario_action(EAction.ACT_DIVE, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_Z_PRESSED)) {
+                return set_mario_action(EAction.ACT_GROUND_POUND, 0);
+            }
+
+            common_air_action_step(EAction.ACT_SIDE_FLIP_LAND, EAnim.MARIO_ANIM_SLIDEFLIP, EAirStep.AIR_STEP_CHECK_LEDGE_GRAB);
+
+            return false;
+        }
+        bool act_wall_kick_air() { return false; }
+        bool act_twirling() { return false; }
+        bool act_water_jump() { return false; }
+        bool act_hold_water_jump() { return false; }
+        bool act_steep_jump() { return false; }
+        bool act_burning_jump() { return false; }
+        bool act_burning_fall() { return false; }
+        bool act_triple_jump() {
+            if (state.hasSpecialTripleJump) {
+                return set_mario_action(EAction.ACT_SPECIAL_TRIPLE_JUMP, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_B_PRESSED)) {
+                return set_mario_action(EAction.ACT_DIVE, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_Z_PRESSED)) {
+                return set_mario_action(EAction.ACT_GROUND_POUND, 0);
+            }
+
+            common_air_action_step(EAction.ACT_TRIPLE_JUMP_LAND, EAnim.MARIO_ANIM_TRIPLE_JUMP, 0);
+            if (state.action == EAction.ACT_TRIPLE_JUMP_LAND) {
+                onRumble?.Invoke(5, 40);
+            }
+
+            return false;
+        }
+        bool act_backflip() { return false; }
+        bool act_long_jump() { return false; }
+        bool act_riding_shell_air() { return false; }
+        bool act_dive() { return false; }
+        bool act_air_throw() { return false; }
+        bool act_backward_air_kb() { return false; }
+        bool act_forward_air_kb() { return false; }
+        bool act_hard_forward_air_kb() { return false; }
+        bool act_hard_backward_air_kb() { return false; }
+        bool act_soft_bonk() { return false; }
+        bool act_air_hit_wall() { return false; }
+        bool act_forward_rollout() { return false; }
+        bool act_shot_from_cannon() { return false; }
+        bool act_butt_slide_air() { return false; }
+        bool act_hold_butt_slide_air() { return false; }
+        bool act_lava_boost() { return false; }
+        bool act_getting_blown() { return false; }
+        bool act_backward_rollout() { return false; }
+        bool act_crazy_box_bounce() { return false; }
+        bool act_special_triple_jump() { return false; }
+        bool act_ground_pound() { return false; }
+        bool act_thrown_forward() { return false; }
+        bool act_thrown_backward() { return false; }
+        bool act_flying_triple_jump() { return false; }
+        bool act_slide_kick() { return false; }
+        bool act_jump_kick() { return false; }
+        bool act_flying() { return false; }
+        bool act_riding_hoot() { return false; }
+        bool act_top_of_pole_jump() { return false; }
+        bool act_vertical_wind() { return false; }
+
+        bool check_common_airborne_cancels() {
+            if (state.input.HasFlag(EInput.INPUT_SQUISHED)) {
+                return drop_and_set_mario_action(EAction.ACT_SQUISHED, 0);
+            }
+
+            if (state.floor.type == ESurface.SURFACE_VERTICAL_WIND && state.action.HasFlag(EAction.ACT_FLAG_ALLOW_VERTICAL_WIND_ACTION)) {
+                return drop_and_set_mario_action(EAction.ACT_VERTICAL_WIND, 0);
+            }
+
+            return false;
+        }
         #endregion
 
         #region misc
@@ -900,8 +1535,125 @@ namespace SuperManual64.Player {
         }
 
         EAction set_mario_action_airborne(EAction action, int actionArg) {
+            if (state.squishTimer != 0 && action is EAction.ACT_DOUBLE_JUMP or EAction.ACT_TWIRLING) {
+                action = EAction.ACT_JUMP;
+            }
+
+            switch (action) {
+                case EAction.ACT_DOUBLE_JUMP:
+                    set_mario_y_vel_based_on_fspeed(52.0f, 0.25f);
+                    state.forwardVel *= 0.8f;
+                    break;
+
+                case EAction.ACT_BACKFLIP:
+                    state.forwardVel = -16.0f;
+                    set_mario_y_vel_based_on_fspeed(62.0f, 0.0f);
+                    break;
+
+                case EAction.ACT_TRIPLE_JUMP:
+                    set_mario_y_vel_based_on_fspeed(69.0f, 0.0f);
+                    state.forwardVel *= 0.8f;
+                    break;
+
+                case EAction.ACT_FLYING_TRIPLE_JUMP:
+                    set_mario_y_vel_based_on_fspeed(82.0f, 0.0f);
+                    break;
+
+                case EAction.ACT_WATER_JUMP:
+                case EAction.ACT_HOLD_WATER_JUMP:
+                    if (actionArg == 0) {
+                        set_mario_y_vel_based_on_fspeed(42.0f, 0.0f);
+                    }
+
+                    break;
+
+                case EAction.ACT_BURNING_JUMP:
+                    state.vel[1] = 31.5f;
+                    state.forwardVel = 8.0f;
+                    break;
+
+                case EAction.ACT_RIDING_SHELL_JUMP:
+                    set_mario_y_vel_based_on_fspeed(42.0f, 0.25f);
+                    break;
+
+                case EAction.ACT_JUMP:
+                case EAction.ACT_HOLD_JUMP:
+                    set_mario_y_vel_based_on_fspeed(42.0f, 0.25f);
+                    state.forwardVel *= 0.8f;
+                    break;
+
+                case EAction.ACT_WALL_KICK_AIR:
+                case EAction.ACT_TOP_OF_POLE_JUMP:
+                    set_mario_y_vel_based_on_fspeed(62.0f, 0.0f);
+                    if (state.forwardVel < 24.0f) {
+                        state.forwardVel = 24.0f;
+                    }
+
+                    state.wallKickTimer = 0;
+                    break;
+
+                case EAction.ACT_SIDE_FLIP:
+                    set_mario_y_vel_based_on_fspeed(62.0f, 0.0f);
+                    state.forwardVel = 8.0f;
+                    state.faceAngleYaw = state.intendedYaw;
+                    break;
+
+                case EAction.ACT_STEEP_JUMP:
+                    set_mario_y_vel_based_on_fspeed(42.0f, 0.25f);
+                    //state.faceAngle[0] = -0x2000;
+                    break;
+
+                case EAction.ACT_LAVA_BOOST:
+                    state.vel[1] = 84.0f;
+                    if (actionArg == 0) {
+                        state.forwardVel = 0.0f;
+                    }
+
+                    break;
+
+                case EAction.ACT_DIVE:
+                    state.forwardVel = Mathf.Min(state.forwardVel + 15, 48);
+                    break;
+
+                case EAction.ACT_LONG_JUMP:
+                    set_mario_y_vel_based_on_fspeed(30.0f, 0.0f);
+                    marioObj.oMarioLongJumpIsSlow = state.forwardVel <= 16.0f;
+
+                    //! (BLJ's) This properly handles long jumps from getting forward speed with
+                    //  too much velocity, but misses backwards longs allowing high negative speeds.
+                    if ((state.forwardVel *= 1.5f) > 48.0f) {
+                        state.forwardVel = 48.0f;
+                    }
+
+                    break;
+
+                case EAction.ACT_SLIDE_KICK:
+                    state.vel[1] = 12.0f;
+                    if (state.forwardVel < 32.0f) {
+                        state.forwardVel = 32.0f;
+                    }
+
+                    break;
+
+                case EAction.ACT_JUMP_KICK:
+                    state.vel[1] = 20.0f;
+                    break;
+            }
+
+            state.peakHeight = state.pos[1];
+            state.flags |= EFlags.MARIO_UNKNOWN_08;
+
             return action;
         }
+
+        void set_mario_y_vel_based_on_fspeed(float initialVelY, float multiplier) {
+            state.vel[1] = initialVelY + (state.forwardVel * multiplier);
+
+            if (state.squishTimer != 0) {
+                state.vel[1] *= 0.5f;
+            }
+        }
+
         EAction set_mario_action_submerged(EAction action, int actionArg) {
             return action;
         }

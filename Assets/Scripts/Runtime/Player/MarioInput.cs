@@ -16,14 +16,12 @@ namespace SuperManual64.Player {
         void OnEnable() {
             map = input.FindActionMap("Player");
             map.Enable();
+
+            state.SetIntentions(map, attachedCamera);
         }
 
         void OnDisable() {
             map.Disable();
-        }
-
-        public void Update() {
-            state.UpdateIntentions(map, attachedCamera);
         }
     }
 }

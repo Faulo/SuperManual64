@@ -3,6 +3,8 @@
 namespace SuperManual64.Player {
     [Flags]
     enum EAction : uint {
+        ACT_UNINITIALIZED = 0,
+
         ACT_GROUP_MASK = 0x000001C0,
         ACT_GROUP_STATIONARY = 0 << 6,
         ACT_GROUP_MOVING = 1 << 6,

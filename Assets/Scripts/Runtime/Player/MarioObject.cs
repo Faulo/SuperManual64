@@ -8,6 +8,8 @@ namespace SuperManual64.Player {
         public float oMarioSteepJumpYaw;
         [SerializeField]
         public AnimInfo animInfo = new();
+        [SerializeField]
+        public bool oMarioLongJumpIsSlow;
 
         public void SetAnimation(EAnim anim) {
             if (animInfo.animID != anim) {
