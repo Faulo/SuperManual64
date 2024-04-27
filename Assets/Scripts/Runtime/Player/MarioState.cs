@@ -343,7 +343,21 @@ namespace SuperManual64.Player {
             }
         }
 
-        bool should_strengthen_gravity_for_jump_ascent() => false;
+        bool should_strengthen_gravity_for_jump_ascent() {
+            if (!flags.HasFlag(EFlags.MARIO_UNKNOWN_08)) {
+                return false;
+            }
+
+            if (action.HasFlag(EAction.ACT_FLAG_INTANGIBLE) || action.HasFlag(EAction.ACT_FLAG_INVULNERABLE)) {
+                return false;
+            }
+
+            if (!input.HasFlag(EInput.INPUT_A_DOWN) && vel[1] > 20.0f) {
+                return (action & EAction.ACT_FLAG_CONTROL_JUMP_HEIGHT) != 0;
+            }
+
+            return false;
+        }
 
         public void Spawn(Vector3 position) {
             pos = position;

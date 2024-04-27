@@ -111,6 +111,17 @@
                 },
                 {
                     "name": "",
+                    "id": "629765b9-dc0d-494a-b6fb-9b4c77332c5b",
+                    "path": "<Gamepad>/leftTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Z",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "fa46ac43-c74b-4568-863f-b054d240afa2",
                     "path": "<Gamepad>/leftShoulder",
                     "interactions": "",
