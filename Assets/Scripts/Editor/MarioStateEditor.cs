@@ -21,10 +21,10 @@ namespace SuperManual64.Editor {
             EditorGUILayout.TextField("Flags", PrintFlag(marioState.flags));
 
             EditorGUILayout.LabelField("Current Action");
-            EditorGUILayout.TextArea(PrintFlag(marioState.action), EditorStyles.textArea, GUILayout.Height(60));
+            EditorGUILayout.TextArea(PrintFlag(marioState.action), EditorStyles.textArea, GUILayout.Height(128));
 
             EditorGUILayout.LabelField("Previous Action");
-            EditorGUILayout.TextArea(PrintFlag(marioState.prevAction), EditorStyles.textArea, GUILayout.Height(60));
+            EditorGUILayout.TextArea(PrintFlag(marioState.prevAction), EditorStyles.textArea, GUILayout.Height(128));
 
             EditorGUI.EndDisabledGroup();
         }

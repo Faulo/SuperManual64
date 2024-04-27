@@ -91,6 +91,8 @@ namespace SuperManual64.Player {
         [SerializeField]
         public int floorAngle;
 
+        public float floorHeight => pos.y;
+
         public bool isFacingDownhill {
             get {
                 int faceAngleYaw = faceAngle[1];
@@ -121,6 +123,12 @@ namespace SuperManual64.Player {
         [SerializeField]
         float unitMultiplier = 0.01f;
 
+        public EGroundStep StationaryGroundStep() {
+            forwardVel = 0;
+            pos.y = floorHeight;
+            return EGroundStep.GROUND_STEP_NONE;
+        }
+
         public EGroundStep PerformGroundStep() {
             var intendedPos = Vector3.zero;
 
@@ -138,6 +146,7 @@ namespace SuperManual64.Player {
         public void Spawn(Vector3 position) {
             pos = position;
             vel = Vector3.zero;
+            action = EAction.ACT_IDLE;
         }
     }
 }

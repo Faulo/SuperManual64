@@ -35,5 +35,11 @@ namespace SuperManual64.Player {
                 return false;
             }
         }
+
+        public bool isSteep {
+            get {
+                return false;
+            }
+        }
     }
 }
