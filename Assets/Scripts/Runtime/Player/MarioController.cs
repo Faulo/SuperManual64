@@ -16,7 +16,7 @@ namespace SuperManual64.Player {
         GameObject heldObj;
 
         void Start() {
-            state.Spawn(transform.position);
+            state.Spawn(transform.position, transform.eulerAngles);
         }
 
         void FixedUpdate() {

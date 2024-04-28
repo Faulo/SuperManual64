@@ -461,8 +461,9 @@ namespace SuperManual64.Player {
             return false;
         }
 
-        public void Spawn(Vector3 position) {
+        public void Spawn(Vector3 position, Vector3 rotation) {
             pos = position;
+            faceAngle = rotation;
             vel = Vector3.zero;
             action = EAction.ACT_IDLE;
         }
