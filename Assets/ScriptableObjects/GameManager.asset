@@ -15,10 +15,10 @@ MonoBehaviour:
   gameScene:
     Scene: {fileID: 102900000, guid: 99c9720ab356a0642a771bea13969a05, type: 3}
     SceneName: SampleScene
-    sceneIndex: 0
+    sceneIndex: 1
     sceneEnabled: 1
   menuScene:
     Scene: {fileID: 102900000, guid: 31de5cf58fe22f342ba32050e2a758bd, type: 3}
     SceneName: Menu
-    sceneIndex: 1
+    sceneIndex: 0
     sceneEnabled: 1
