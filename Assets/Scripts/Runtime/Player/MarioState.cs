@@ -316,6 +316,7 @@ namespace SuperManual64.Player {
             var lowerWall = surfaces.ResolveWallCollisions(ref nextPos, 30.0f * unitMultiplier, 50.0f * unitMultiplier);
 
             if (!surfaces.TryFindFloor(nextPos, out var newFloor)) {
+                // we hit OOB
                 pos.y = nextPos.y;
                 return EAirStep.AIR_STEP_HIT_WALL;
             }
@@ -329,6 +330,17 @@ namespace SuperManual64.Player {
 
             if (upperWall is not null || lowerWall is not null) {
                 wall = upperWall ?? lowerWall;
+
+                if (wall.type == ESurface.SURFACE_BURNING) {
+                    return EAirStep.AIR_STEP_HIT_LAVA_WALL;
+                }
+
+                float wallDYaw = Mathf.DeltaAngle(Mathf.Atan2(wall.normal.z, wall.normal.x) * Mathf.Rad2Deg, faceAngleYaw);
+
+                if (wallDYaw is < -135 or > 135) {
+                    flags |= EFlags.MARIO_UNKNOWN_30;
+                    return EAirStep.AIR_STEP_HIT_WALL;
+                }
             }
 
             _ = stepArg;

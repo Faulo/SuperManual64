@@ -12,6 +12,8 @@ namespace SuperManual64.Player {
         MarioState state;
         [SerializeField, Expandable]
         MarioObject marioObj;
+        [SerializeField, Expandable]
+        GameObject heldObj;
 
         void Start() {
             state.Spawn(transform.position);
@@ -853,7 +855,7 @@ namespace SuperManual64.Player {
                     break;
                 case EGroundStep.GROUND_STEP_HIT_WALL:
                     if (slopeClass == ESurfaceClass.SURFACE_CLASS_VERY_SLIPPERY) {
-                        // mario_bonk_reflection(TRUE);
+                        mario_bonk_reflection(true);
                     } else {
                         state.forwardVel = 0;
                     }
@@ -1346,7 +1348,18 @@ namespace SuperManual64.Player {
 
             return false;
         }
-        bool act_wall_kick_air() { return false; }
+        bool act_wall_kick_air() {
+            if (state.input.HasFlag(EInput.INPUT_B_PRESSED)) {
+                return set_mario_action(EAction.ACT_DIVE, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_Z_PRESSED)) {
+                return set_mario_action(EAction.ACT_GROUND_POUND, 0);
+            }
+
+            common_air_action_step(EAction.ACT_JUMP_LAND, EAnim.MARIO_ANIM_SLIDEJUMP, EAirStep.AIR_STEP_CHECK_LEDGE_GRAB);
+            return false;
+        }
         bool act_twirling() { return false; }
         bool act_water_jump() { return false; }
         bool act_hold_water_jump() { return false; }
@@ -1378,10 +1391,30 @@ namespace SuperManual64.Player {
         bool act_riding_shell_air() { return false; }
         bool act_dive() { return false; }
         bool act_air_throw() { return false; }
-        bool act_backward_air_kb() { return false; }
-        bool act_forward_air_kb() { return false; }
-        bool act_hard_forward_air_kb() { return false; }
-        bool act_hard_backward_air_kb() { return false; }
+        bool act_backward_air_kb() {
+            if (check_wall_kick()) {
+                return true;
+            }
+
+            common_air_knockback_step(EAction.ACT_BACKWARD_GROUND_KB, EAction.ACT_HARD_BACKWARD_GROUND_KB, EAnim.MARIO_ANIM_BACKWARD_AIR_KB, -16.0f);
+            return false;
+        }
+        bool act_forward_air_kb() {
+            if (check_wall_kick()) {
+                return true;
+            }
+
+            common_air_knockback_step(EAction.ACT_FORWARD_GROUND_KB, EAction.ACT_HARD_FORWARD_GROUND_KB, EAnim.MARIO_ANIM_AIR_FORWARD_KB, 16.0f);
+            return false;
+        }
+        bool act_hard_forward_air_kb() {
+            common_air_knockback_step(EAction.ACT_HARD_FORWARD_GROUND_KB, EAction.ACT_HARD_FORWARD_GROUND_KB, EAnim.MARIO_ANIM_AIR_FORWARD_KB, 16.0f);
+            return false;
+        }
+        bool act_hard_backward_air_kb() {
+            common_air_knockback_step(EAction.ACT_HARD_BACKWARD_GROUND_KB, EAction.ACT_HARD_BACKWARD_GROUND_KB, EAnim.MARIO_ANIM_BACKWARD_AIR_KB, -16.0f);
+            return false;
+        }
         bool act_soft_bonk() {
             if (check_wall_kick()) {
                 return true;
@@ -1439,7 +1472,42 @@ namespace SuperManual64.Player {
             return false;
         }
 
-        bool act_air_hit_wall() { return false; }
+        bool act_air_hit_wall() {
+            if (heldObj) {
+                mario_drop_held_object();
+            }
+
+            if (++state.actionTimer <= 2) {
+                if (state.input.HasFlag(EInput.INPUT_A_PRESSED)) {
+                    state.vel[1] = 52.0f;
+                    state.faceAngle[1] += 0x8000;
+                    return set_mario_action(EAction.ACT_WALL_KICK_AIR, 0);
+                }
+            } else if (state.forwardVel >= 38.0f) {
+                state.wallKickTimer = 5;
+                if (state.vel[1] > 0.0f) {
+                    state.vel[1] = 0.0f;
+                }
+
+                //state.particleFlags |= PARTICLE_VERTICAL_STAR;
+                return set_mario_action(EAction.ACT_BACKWARD_AIR_KB, 0);
+            } else {
+                state.wallKickTimer = 5;
+                if (state.vel[1] > 0.0f) {
+                    state.vel[1] = 0.0f;
+                }
+
+                if (state.forwardVel > 8.0f) {
+                    state.forwardVel = -8;
+                }
+
+                return set_mario_action(EAction.ACT_SOFT_BONK, 0);
+            }
+
+            marioObj.SetAnimation(EAnim.MARIO_ANIM_START_WALLKICK);
+
+            return false;
+        }
         bool act_forward_rollout() { return false; }
         bool act_shot_from_cannon() { return false; }
         bool act_butt_slide_air() { return false; }

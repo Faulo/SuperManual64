@@ -66,19 +66,20 @@ namespace SuperManual64.Level {
             }
 
             ceil = new(FindSurface(result.collider), result.point, result.normal);
-            return true;
+            return false;
         }
 
-        SphereCollider collisionCollider;
+        bool isSetUp => testCollider && testCollider.gameObject && testCollider.gameObject.scene.isLoaded;
+        SphereCollider testCollider;
 
         void SetUpCollider(float radius) {
-            if (!collisionCollider) {
-                collisionCollider = new GameObject().AddComponent<SphereCollider>();
-                collisionCollider.gameObject.hideFlags = HideFlags.HideAndDontSave;
-                collisionCollider.gameObject.SetActive(false);
+            if (!isSetUp) {
+                testCollider = new GameObject(nameof(testCollider)).AddComponent<SphereCollider>();
+                //testCollider.gameObject.hideFlags = HideFlags.HideAndDontSave;
             }
 
-            collisionCollider.radius = radius;
+            testCollider.radius = radius;
+            Physics.SyncTransforms();
         }
 
         public SurfacePoint ResolveWallCollisions(ref Vector3 position, float offsetY, float radius) {
@@ -95,6 +96,9 @@ namespace SuperManual64.Level {
             return collisionData.wall;
         }
 
+        [SerializeField]
+        float findWallNormalY = 0.5f;
+
         Collider[] colliderResults = new Collider[16];
         void ResolveWallCollisionsInternal(WallCollisionData data) {
             SetUpCollider(data.radius);
@@ -106,13 +110,15 @@ namespace SuperManual64.Level {
             for (int i = 0; i < count; i++) {
                 var collider = colliderResults[i];
                 if (Physics.ComputePenetration(
-                    collisionCollider, position, Quaternion.identity,
+                    testCollider, position, Quaternion.identity,
                     collider, collider.transform.position, collider.transform.rotation,
                     out var direction, out float distance)) {
-                    var offset = direction * distance;
-                    offset.y = 0;
-                    position += offset;
-                    data.wall = new(FindSurface(collider), collider.ClosestPoint(position), direction);
+                    if (direction.y < findWallNormalY) {
+                        direction.y = 0;
+                        var offset = direction * distance;
+                        position += offset;
+                        data.wall = new(FindSurface(collider), position, direction.normalized);
+                    }
                 }
             }
 
