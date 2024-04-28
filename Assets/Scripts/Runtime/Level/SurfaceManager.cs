@@ -18,7 +18,7 @@ namespace SuperManual64.Level {
             }
 
             for (int i = 0; i < surfaces.Length; i++) {
-                if (surfaces[i].material == collider.sharedMaterial) {
+                if (surfaces[i].material == collider.material) {
                     return surfaces[i];
                 }
             }
@@ -66,7 +66,7 @@ namespace SuperManual64.Level {
             }
 
             ceil = new(FindSurface(result.collider), result.point, result.normal);
-            return false;
+            return true;
         }
 
         bool isSetUp => testCollider && testCollider.gameObject && testCollider.gameObject.scene.isLoaded;
@@ -75,7 +75,6 @@ namespace SuperManual64.Level {
         void SetUpCollider(float radius) {
             if (!isSetUp) {
                 testCollider = new GameObject(nameof(testCollider)).AddComponent<SphereCollider>();
-                //testCollider.gameObject.hideFlags = HideFlags.HideAndDontSave;
             }
 
             testCollider.radius = radius;

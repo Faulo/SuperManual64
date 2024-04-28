@@ -10,6 +10,7 @@ namespace SuperManual64.Player {
         public AnimInfo animInfo = new();
         [SerializeField]
         public bool oMarioLongJumpIsSlow;
+        internal bool oInteractStatus;
 
         public void SetAnimation(EAnim anim) {
             if (animInfo.animID != anim) {

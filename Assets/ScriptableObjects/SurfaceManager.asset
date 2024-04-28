@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   surfaces:
   - {fileID: 11400000, guid: 1ae5889db2664884a988c006c9d0a450, type: 2}
+  - {fileID: 11400000, guid: 219a71e5b429282429ed9676fa6aad6d, type: 2}
   findFloorOffset: {x: 0, y: 0.4, z: 0}
   findCeilingOffset: {x: 0, y: 0.8, z: 0}
   findWallNormalY: 0.5

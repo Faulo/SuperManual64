@@ -164,7 +164,7 @@ namespace SuperManual64.Player {
         [SerializeField]
         public SurfacePoint ceil;
         public float ceilHeight => ceil is null
-            ? floorHeight
+            ? floorHeight + 1000
             : ceil.position.y;
         [SerializeField]
         public SurfacePoint floor;
@@ -193,7 +193,7 @@ namespace SuperManual64.Player {
         [SerializeField]
         public float gettingBlownGravity = 0;
         [SerializeField]
-        float unitMultiplier = 0.01f;
+        public float unitMultiplier = 0.01f;
 
         public void UpdateHitbox() {
             if (action.HasFlag(EAction.ACT_FLAG_SHORT_HITBOX)) {
@@ -328,6 +328,14 @@ namespace SuperManual64.Player {
                 return EAirStep.AIR_STEP_LANDED;
             }
 
+            //! When the wall is not completely vertical or there is a slight wall
+            // misalignment, you can activate these conditions in unexpected situations
+            if (stepArg.HasFlag(EAirStep.AIR_STEP_CHECK_LEDGE_GRAB) && upperWall is null && lowerWall is not null) {
+                if (check_ledge_grab(lowerWall, nextPos)) {
+                    return EAirStep.AIR_STEP_GRABBED_LEDGE;
+                }
+            }
+
             if (upperWall is not null || lowerWall is not null) {
                 wall = upperWall ?? lowerWall;
 
@@ -346,6 +354,28 @@ namespace SuperManual64.Player {
             _ = stepArg;
 
             return EAirStep.AIR_STEP_NONE;
+        }
+
+        bool check_ledge_grab(SurfacePoint lowerWall, Vector3 nextPos) {
+            if (vel[1] > 0) {
+                return false;
+            }
+
+            var ledgePos = nextPos;
+            ledgePos.x -= lowerWall.normal.x * 60.0f * unitMultiplier;
+            ledgePos.y += 160.0f * unitMultiplier;
+            ledgePos.z -= lowerWall.normal.z * 60.0f * unitMultiplier;
+            if (!surfaces.TryFindFloor(ledgePos, out var ledgeFloor)) {
+                return false;
+            }
+
+            ledgePos.y = ledgeFloor.height;
+            floor = ledgeFloor;
+
+            floorAngle = Mathf.Atan2(ledgeFloor.normal.z, ledgeFloor.normal.x) * Mathf.Rad2Deg;
+            faceAngleYaw = (Mathf.Atan2(lowerWall.normal.z, lowerWall.normal.x) * Mathf.Rad2Deg) + 180;
+
+            return true;
         }
 
         [Header("Runtime Counters")]

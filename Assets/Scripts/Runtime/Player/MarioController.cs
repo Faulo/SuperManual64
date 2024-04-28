@@ -29,6 +29,7 @@ namespace SuperManual64.Player {
                     EAction.ACT_GROUP_STATIONARY => mario_execute_stationary_action(),
                     EAction.ACT_GROUP_MOVING => mario_execute_moving_action(),
                     EAction.ACT_GROUP_AIRBORNE => mario_execute_airborne_action(),
+                    EAction.ACT_GROUP_AUTOMATIC => mario_execute_automatic_action(),
                     _ => false,
                 };
             }
@@ -1201,7 +1202,7 @@ namespace SuperManual64.Player {
                     break;
 
                 case EAirStep.AIR_STEP_HIT_LAVA_WALL:
-                    // lava_boost_on_wall(m);
+                    // lava_boost_on_wall();
                     break;
             }
         }
@@ -1456,7 +1457,7 @@ namespace SuperManual64.Player {
                     break;
 
                 case EAirStep.AIR_STEP_HIT_LAVA_WALL:
-                    //lava_boost_on_wall(m);
+                    //lava_boost_on_wall();
                     break;
             }
 
@@ -1539,6 +1540,160 @@ namespace SuperManual64.Player {
 
             return false;
         }
+        #endregion
+
+        #region automatic
+        bool mario_execute_automatic_action() {
+
+            if (check_common_automatic_cancels()) {
+                return true;
+            }
+
+            return state.action switch {
+                EAction.ACT_HOLDING_POLE => act_holding_pole(),
+                EAction.ACT_GRAB_POLE_SLOW => act_grab_pole_slow(),
+                EAction.ACT_GRAB_POLE_FAST => act_grab_pole_fast(),
+                EAction.ACT_CLIMBING_POLE => act_climbing_pole(),
+                EAction.ACT_TOP_OF_POLE_TRANSITION => act_top_of_pole_transition(),
+                EAction.ACT_TOP_OF_POLE => act_top_of_pole(),
+                EAction.ACT_START_HANGING => act_start_hanging(),
+                EAction.ACT_HANGING => act_hanging(),
+                EAction.ACT_HANG_MOVING => act_hang_moving(),
+                EAction.ACT_LEDGE_GRAB => act_ledge_grab(),
+                EAction.ACT_LEDGE_CLIMB_SLOW_1 => act_ledge_climb_slow(),
+                EAction.ACT_LEDGE_CLIMB_SLOW_2 => act_ledge_climb_slow(),
+                EAction.ACT_LEDGE_CLIMB_DOWN => act_ledge_climb_down(),
+                EAction.ACT_LEDGE_CLIMB_FAST => act_ledge_climb_fast(),
+                EAction.ACT_GRABBED => act_grabbed(),
+                EAction.ACT_IN_CANNON => act_in_cannon(),
+                EAction.ACT_TORNADO_TWIRLING => act_tornado_twirling(),
+                _ => throw new NotImplementedException(state.action.ToString()),
+            };
+        }
+
+        bool check_common_automatic_cancels() {
+            return false;
+        }
+
+        bool act_holding_pole() { return false; }
+        bool act_grab_pole_slow() { return false; }
+        bool act_grab_pole_fast() { return false; }
+        bool act_climbing_pole() { return false; }
+        bool act_top_of_pole_transition() { return false; }
+        bool act_top_of_pole() { return false; }
+        bool act_start_hanging() { return false; }
+        bool act_hanging() { return false; }
+        bool act_hang_moving() { return false; }
+        bool act_ledge_grab() {
+            bool hasSpaceForMario = state.ceilHeight - state.floorHeight >= 160.0f * state.unitMultiplier;
+
+            if (state.actionTimer < 10) {
+                state.actionTimer++;
+            }
+
+            if (state.floor.normal.y < 0.9063078f) {
+                return let_go_of_ledge();
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_Z_PRESSED) || state.input.HasFlag(EInput.INPUT_OFF_FLOOR)) {
+                return let_go_of_ledge();
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_A_PRESSED) && hasSpaceForMario) {
+                return set_mario_action(EAction.ACT_LEDGE_CLIMB_FAST, 0);
+            }
+
+            if (state.input.HasFlag(EInput.INPUT_STOMPED)) {
+                return let_go_of_ledge();
+            }
+
+            if (state.actionTimer == 10 && state.input.HasFlag(EInput.INPUT_NONZERO_ANALOG)) {
+                if (state.deltaYaw is >= -90 and <= 90) {
+                    if (hasSpaceForMario) {
+                        return set_mario_action(EAction.ACT_LEDGE_CLIMB_SLOW_1, 0);
+                    }
+                } else {
+                    return let_go_of_ledge();
+                }
+            }
+
+            if (hasSpaceForMario) {
+                return set_mario_action(EAction.ACT_LEDGE_CLIMB_FAST, 0);
+            }
+
+            stop_and_set_height_to_floor();
+            marioObj.SetAnimation(EAnim.MARIO_ANIM_IDLE_ON_LEDGE);
+
+            return false;
+        }
+
+        bool let_go_of_ledge() {
+            state.vel[1] = 0.0f;
+            state.forwardVel = -8.0f;
+            return set_mario_action(EAction.ACT_SOFT_BONK, 0);
+        }
+
+        bool act_ledge_climb_slow() {
+            if (state.input.HasFlag(EInput.INPUT_OFF_FLOOR)) {
+                return let_go_of_ledge();
+            }
+
+            if (state.actionTimer >= 28 && (state.input & (EInput.INPUT_NONZERO_ANALOG | EInput.INPUT_A_PRESSED | EInput.INPUT_OFF_FLOOR | EInput.INPUT_ABOVE_SLIDE)) != 0) {
+                climb_up_ledge();
+                return check_common_action_exits();
+            }
+
+            update_ledge_climb(EAnim.MARIO_ANIM_SLOW_LEDGE_GRAB, EAction.ACT_IDLE);
+
+            if (marioObj.animInfo.animFrame == 17) {
+                state.action = EAction.ACT_LEDGE_CLIMB_SLOW_2;
+            }
+
+            return false;
+        }
+
+        bool act_ledge_climb_down() {
+            if (state.input.HasFlag(EInput.INPUT_OFF_FLOOR)) {
+                return let_go_of_ledge();
+            }
+
+            update_ledge_climb(EAnim.MARIO_ANIM_CLIMB_DOWN_LEDGE, EAction.ACT_LEDGE_GRAB);
+            state.actionArg = 1;
+
+            return false;
+        }
+
+        bool act_ledge_climb_fast() {
+            if (state.input.HasFlag(EInput.INPUT_OFF_FLOOR)) {
+                return let_go_of_ledge();
+            }
+
+            update_ledge_climb(EAnim.MARIO_ANIM_FAST_LEDGE_GRAB, EAction.ACT_IDLE);
+
+            return false;
+        }
+
+        void climb_up_ledge() {
+            marioObj.SetAnimation(EAnim.MARIO_ANIM_IDLE_HEAD_LEFT);
+            state.pos[0] += 14.0f * Mathf.Sin(state.faceAngleYaw * Mathf.Deg2Rad) * state.unitMultiplier;
+            state.pos[2] += 14.0f * Mathf.Cos(state.faceAngleYaw * Mathf.Deg2Rad) * state.unitMultiplier;
+        }
+
+        void update_ledge_climb(EAnim animation, EAction endAction) {
+            stop_and_set_height_to_floor();
+
+            marioObj.SetAnimation(animation);
+            if (marioObj.animInfo.isAnimAtEnd) {
+                set_mario_action(endAction, 0);
+                if (endAction == EAction.ACT_IDLE) {
+                    climb_up_ledge();
+                }
+            }
+        }
+
+        bool act_grabbed() { return false; }
+        bool act_in_cannon() { return false; }
+        bool act_tornado_twirling() { return false; }
         #endregion
 
         #region misc
@@ -1801,6 +1956,12 @@ namespace SuperManual64.Player {
         EAction set_mario_action_cutscene(EAction action, int actionArg) {
             _ = actionArg;
             return action;
+        }
+
+        void stop_and_set_height_to_floor() {
+            state.forwardVel = 0;
+            state.vel[1] = 0;
+            state.pos[1] = state.floorHeight;
         }
 
         #endregion
