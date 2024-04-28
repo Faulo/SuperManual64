@@ -18,7 +18,7 @@ namespace SuperManual64.Level {
             }
 
             for (int i = 0; i < surfaces.Length; i++) {
-                if (surfaces[i].material == collider.material) {
+                if (surfaces[i].material == collider.sharedMaterial) {
                     return surfaces[i];
                 }
             }
