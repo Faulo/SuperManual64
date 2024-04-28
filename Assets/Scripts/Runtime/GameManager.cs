@@ -8,14 +8,14 @@ namespace SuperManual64 {
         SceneReference gameScene = new();
 
         public void LoadGame() {
-            gameScene.LoadScene();
+            gameScene.LoadSceneAsync();
         }
 
         [SerializeField]
         SceneReference menuScene = new();
 
         public void LoadMenu() {
-            menuScene.LoadScene();
+            menuScene.LoadSceneAsync();
         }
 
         public void Quit() {
