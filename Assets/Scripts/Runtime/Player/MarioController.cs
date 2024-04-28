@@ -155,7 +155,7 @@ namespace SuperManual64.Player {
         bool mario_push_off_steep_floor(EAction action, int actionArg) {
             float floorDYaw = state.floorAngle - state.faceAngleYaw;
 
-            if (floorDYaw is > (-0x4000) and < 0x4000) {
+            if (floorDYaw is > -90 and < 90) {
                 state.forwardVel = 16.0f;
                 state.faceAngleYaw = state.floorAngle;
             } else {
@@ -685,7 +685,7 @@ namespace SuperManual64.Player {
                     _ => 1.7f,
                 };
 
-                if (floorDYaw is > (-0x4000) and < 0x4000) {
+                if (floorDYaw is > -90 and < 90) {
                     state.forwardVel += slopeAccel * steepness;
                 } else {
                     state.forwardVel -= slopeAccel * steepness;
@@ -1481,7 +1481,7 @@ namespace SuperManual64.Player {
             if (++state.actionTimer <= 2) {
                 if (state.input.HasFlag(EInput.INPUT_A_PRESSED)) {
                     state.vel[1] = 52.0f;
-                    state.faceAngle[1] += 0x8000;
+                    state.faceAngleYaw += 180;
                     return set_mario_action(EAction.ACT_WALL_KICK_AIR, 0);
                 }
             } else if (state.forwardVel >= 38.0f) {
@@ -1544,7 +1544,6 @@ namespace SuperManual64.Player {
 
         #region automatic
         bool mario_execute_automatic_action() {
-
             if (check_common_automatic_cancels()) {
                 return true;
             }
@@ -1585,7 +1584,7 @@ namespace SuperManual64.Player {
         bool act_hanging() { return false; }
         bool act_hang_moving() { return false; }
         bool act_ledge_grab() {
-            bool hasSpaceForMario = state.ceilHeight - state.floorHeight >= 160.0f * state.unitMultiplier;
+            bool hasSpaceForMario = state.ceilHeight - state.ledgeHeight >= 160.0f * state.unitMultiplier;
 
             if (state.actionTimer < 10) {
                 state.actionTimer++;
@@ -1617,11 +1616,7 @@ namespace SuperManual64.Player {
                 }
             }
 
-            if (hasSpaceForMario) {
-                return set_mario_action(EAction.ACT_LEDGE_CLIMB_FAST, 0);
-            }
-
-            stop_and_set_height_to_floor();
+            stop_and_set_height_to_ledge();
             marioObj.SetAnimation(EAnim.MARIO_ANIM_IDLE_ON_LEDGE);
 
             return false;
@@ -1675,12 +1670,13 @@ namespace SuperManual64.Player {
 
         void climb_up_ledge() {
             marioObj.SetAnimation(EAnim.MARIO_ANIM_IDLE_HEAD_LEFT);
-            state.pos[0] += 14.0f * Mathf.Sin(state.faceAngleYaw * Mathf.Deg2Rad) * state.unitMultiplier;
-            state.pos[2] += 14.0f * Mathf.Cos(state.faceAngleYaw * Mathf.Deg2Rad) * state.unitMultiplier;
+            //state.pos[0] += 14.0f * Mathf.Sin(state.faceAngleYaw * Mathf.Deg2Rad) * state.unitMultiplier;
+            //state.pos[2] += 14.0f * Mathf.Cos(state.faceAngleYaw * Mathf.Deg2Rad) * state.unitMultiplier;
+            state.pos = state.ledge.position;
         }
 
         void update_ledge_climb(EAnim animation, EAction endAction) {
-            stop_and_set_height_to_floor();
+            stop_and_set_height_to_ledge();
 
             marioObj.SetAnimation(animation);
             if (marioObj.animInfo.isAnimAtEnd) {
@@ -1958,10 +1954,10 @@ namespace SuperManual64.Player {
             return action;
         }
 
-        void stop_and_set_height_to_floor() {
+        void stop_and_set_height_to_ledge() {
             state.forwardVel = 0;
             state.vel[1] = 0;
-            state.pos[1] = state.floorHeight;
+            state.pos[1] = state.ledgeHeight;
         }
 
         #endregion

@@ -96,6 +96,11 @@ namespace SuperManual64.Player {
             if (surfaces.TryFindFloor(pos, out var newFloor)) {
                 floor = newFloor;
             }
+
+            if (pos[1] > floorHeight + (100.0f * unitMultiplier)) {
+                // causes wild bonks
+                // input |= EInput.INPUT_OFF_FLOOR;
+            }
         }
 
         public float deltaYaw => Mathf.DeltaAngle(intendedYaw, faceAngleYaw);
@@ -173,10 +178,14 @@ namespace SuperManual64.Player {
 
         public float floorHeight => floor.height;
 
+        [SerializeField]
+        public SurfacePoint ledge;
+
+        public float ledgeHeight => ledge.height;
+
         public bool isFacingDownhill {
             get {
-                //return floorAngle - faceAngleYaw is > (-0x4000) and < 0x4000;
-                return false;
+                return Mathf.DeltaAngle(floorAngle, faceAngleYaw) is > -90 and < 90;
             }
         }
         public bool shouldBeginSliding {
@@ -371,6 +380,7 @@ namespace SuperManual64.Player {
 
             ledgePos.y = ledgeFloor.height;
             floor = ledgeFloor;
+            ledge = ledgeFloor;
 
             floorAngle = Mathf.Atan2(ledgeFloor.normal.z, ledgeFloor.normal.x) * Mathf.Rad2Deg;
             faceAngleYaw = (Mathf.Atan2(lowerWall.normal.z, lowerWall.normal.x) * Mathf.Rad2Deg) + 180;
