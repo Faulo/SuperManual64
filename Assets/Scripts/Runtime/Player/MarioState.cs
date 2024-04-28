@@ -93,7 +93,9 @@ namespace SuperManual64.Player {
                 doubleJumpTimer--;
             }
 
-            surfaces.TryFindFloor(pos, out floor);
+            if (surfaces.TryFindFloor(pos, out var newFloor)) {
+                floor = newFloor;
+            }
         }
 
         public float deltaYaw => Mathf.DeltaAngle(intendedYaw, faceAngleYaw);
@@ -223,7 +225,8 @@ namespace SuperManual64.Player {
             return EGroundStep.GROUND_STEP_NONE;
         }
         EGroundStep perform_ground_quarter_step(Vector3 nextPos) {
-            wall = default; // resolve_and_return_wall_collisions(nextPos, 60.0f, 50.0f);
+            _ = surfaces.ResolveWallCollisions(ref nextPos, 30.0f * unitMultiplier, 24.0f * unitMultiplier);
+            wall = surfaces.ResolveWallCollisions(ref nextPos, 60.0f * unitMultiplier, 50.0f * unitMultiplier);
 
             if (!surfaces.TryFindFloor(nextPos, out var floor)) {
                 return EGroundStep.GROUND_STEP_HIT_WALL_STOP_QSTEPS;
@@ -231,7 +234,7 @@ namespace SuperManual64.Player {
 
             bool hasCeiling = surfaces.TryFindCeiling(nextPos.WithY(floor.height), out var ceil);
 
-            if (nextPos[1] > floor.height + (100.0f * unitMultiplier)) {
+            if (nextPos.y > floor.height + (100.0f * unitMultiplier)) {
                 if (hasCeiling && (nextPos[1] + (160.0f * unitMultiplier) >= ceil.height)) {
                     return EGroundStep.GROUND_STEP_HIT_WALL_STOP_QSTEPS;
                 }
@@ -308,16 +311,24 @@ namespace SuperManual64.Player {
             return stepResult;
         }
 
-        EAirStep perform_air_quarter_step(Vector3 intendedPos, EAirStep stepArg) {
-            if (!surfaces.TryFindFloor(intendedPos, out var newFloor)) {
-                return EAirStep.AIR_STEP_NONE;
+        EAirStep perform_air_quarter_step(Vector3 nextPos, EAirStep stepArg) {
+            var upperWall = surfaces.ResolveWallCollisions(ref nextPos, 150.0f * unitMultiplier, 50.0f * unitMultiplier);
+            var lowerWall = surfaces.ResolveWallCollisions(ref nextPos, 30.0f * unitMultiplier, 50.0f * unitMultiplier);
+
+            if (!surfaces.TryFindFloor(nextPos, out var newFloor)) {
+                pos.y = nextPos.y;
+                return EAirStep.AIR_STEP_HIT_WALL;
             }
 
             floor = newFloor;
-            pos = intendedPos;
+            pos = nextPos;
             if (pos.y < floorHeight) {
                 pos.y = floorHeight;
                 return EAirStep.AIR_STEP_LANDED;
+            }
+
+            if (upperWall is not null || lowerWall is not null) {
+                wall = upperWall ?? lowerWall;
             }
 
             _ = stepArg;

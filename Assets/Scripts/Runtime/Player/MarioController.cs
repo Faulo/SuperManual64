@@ -1382,7 +1382,63 @@ namespace SuperManual64.Player {
         bool act_forward_air_kb() { return false; }
         bool act_hard_forward_air_kb() { return false; }
         bool act_hard_backward_air_kb() { return false; }
-        bool act_soft_bonk() { return false; }
+        bool act_soft_bonk() {
+            if (check_wall_kick()) {
+                return true;
+            }
+
+            common_air_knockback_step(EAction.ACT_FREEFALL_LAND, EAction.ACT_HARD_BACKWARD_GROUND_KB, EAnim.MARIO_ANIM_GENERAL_FALL, state.forwardVel);
+            return false;
+        }
+
+        void common_air_knockback_step(EAction landAction, EAction hardFallAction, EAnim animation, float speed) {
+            state.forwardVel = speed;
+
+            switch (state.PerformAirStep(0)) {
+                case EAirStep.AIR_STEP_NONE:
+                    marioObj.SetAnimation(animation);
+                    break;
+
+                case EAirStep.AIR_STEP_LANDED:
+                    onRumble?.Invoke(5, 40);
+                    if (!check_fall_damage_or_get_stuck(hardFallAction)) {
+                        if (state.action is EAction.ACT_THROWN_FORWARD or EAction.ACT_THROWN_BACKWARD) {
+                            set_mario_action(landAction, state.hurtCounter);
+                        } else {
+                            set_mario_action(landAction, state.actionArg);
+                        }
+                    }
+
+                    break;
+
+                case EAirStep.AIR_STEP_HIT_WALL:
+                    marioObj.SetAnimation(EAnim.MARIO_ANIM_BACKWARD_AIR_KB);
+                    mario_bonk_reflection(false);
+
+                    if (state.vel[1] > 0.0f) {
+                        state.vel[1] = 0.0f;
+                    }
+
+                    state.forwardVel = -speed;
+                    break;
+
+                case EAirStep.AIR_STEP_HIT_LAVA_WALL:
+                    //lava_boost_on_wall(m);
+                    break;
+            }
+
+            return;
+        }
+
+        bool check_wall_kick() {
+            if (state.input.HasFlag(EInput.INPUT_A_PRESSED) && state.wallKickTimer != 0 && state.prevAction == EAction.ACT_AIR_HIT_WALL) {
+                state.faceAngleYaw += 180;
+                return set_mario_action(EAction.ACT_WALL_KICK_AIR, 0);
+            }
+
+            return false;
+        }
+
         bool act_air_hit_wall() { return false; }
         bool act_forward_rollout() { return false; }
         bool act_shot_from_cannon() { return false; }
