@@ -1,5 +1,6 @@
 ﻿using System;
 using Slothsoft.UnityExtensions;
+using SuperManual64.Level;
 using UnityEngine;
 
 namespace SuperManual64.Player {
@@ -1154,7 +1155,7 @@ namespace SuperManual64.Player {
                         mario_bonk_reflection(false);
                         state.faceAngleYaw += 180;
 
-                        if (state.wall) {
+                        if (state.wall is not null) {
                             set_mario_action(EAction.ACT_AIR_HIT_WALL, 0);
                         } else {
                             if (state.vel[1] > 0.0f) {
@@ -1204,7 +1205,7 @@ namespace SuperManual64.Player {
         }
 
         void mario_bonk_reflection(bool negateSpeed) {
-            if (state.wall) {
+            if (state.wall is not null) {
                 float wallAngle = Mathf.Atan2(state.wall.normal.z, state.wall.normal.x) * Mathf.Rad2Deg;
                 state.faceAngleYaw = wallAngle - (state.faceAngleYaw - wallAngle);
             }

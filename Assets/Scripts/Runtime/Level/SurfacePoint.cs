@@ -1,12 +1,10 @@
 ﻿using UnityEngine;
 
-namespace SuperManual64.Player {
-    [CreateAssetMenu]
-    sealed class Surface : ScriptableObject {
-        [SerializeField]
-        public Vector3 normal = Vector3.up;
-        [SerializeField]
-        public ESurface type;
+namespace SuperManual64.Level {
+    sealed record SurfacePoint(Surface surface, Vector3 position, Vector3 normal) {
+        public float height => position.y;
+
+        public ESurface type => surface.type;
 
         public ESurfaceClass surfaceClass => type switch {
             ESurface.SURFACE_NOT_SLIPPERY => ESurfaceClass.SURFACE_CLASS_NOT_SLIPPERY,

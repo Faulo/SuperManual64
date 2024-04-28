@@ -1,4 +1,6 @@
 using System;
+using Slothsoft.UnityExtensions;
+using SuperManual64.Level;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -90,6 +92,8 @@ namespace SuperManual64.Player {
             if (doubleJumpTimer > 0) {
                 doubleJumpTimer--;
             }
+
+            surfaces.TryFindFloor(pos, out floor);
         }
 
         public float deltaYaw => Mathf.DeltaAngle(intendedYaw, faceAngleYaw);
@@ -117,6 +121,8 @@ namespace SuperManual64.Player {
         public EFlags flags;
 
         [Header("Physics")]
+        [SerializeField, Expandable]
+        SurfaceManager surfaces;
         [SerializeField]
         public Vector3 faceAngle;
         public float faceAngleYaw {
@@ -152,15 +158,18 @@ namespace SuperManual64.Player {
         [SerializeField]
         public float slideVelZ;
         [SerializeField]
-        public Surface wall;
+        public SurfacePoint wall;
         [SerializeField]
-        public Surface ceil;
+        public SurfacePoint ceil;
+        public float ceilHeight => ceil is null
+            ? floorHeight
+            : ceil.position.y;
         [SerializeField]
-        public Surface floor;
+        public SurfacePoint floor;
         [SerializeField]
         public float floorAngle;
 
-        public float floorHeight => 0;
+        public float floorHeight => floor.height;
 
         public bool isFacingDownhill {
             get {
@@ -206,7 +215,53 @@ namespace SuperManual64.Player {
                 intendedPos[2] = pos[2] + (floor.normal.y * unitMultiplier * (vel[2] / 4.0f));
                 intendedPos[1] = pos[1];
 
-                pos = intendedPos;
+                if (perform_ground_quarter_step(intendedPos) is EGroundStep.GROUND_STEP_LEFT_GROUND or EGroundStep.GROUND_STEP_HIT_WALL_STOP_QSTEPS) {
+                    break;
+                }
+            }
+
+            return EGroundStep.GROUND_STEP_NONE;
+        }
+        EGroundStep perform_ground_quarter_step(Vector3 nextPos) {
+            wall = default; // resolve_and_return_wall_collisions(nextPos, 60.0f, 50.0f);
+
+            if (!surfaces.TryFindFloor(nextPos, out var floor)) {
+                return EGroundStep.GROUND_STEP_HIT_WALL_STOP_QSTEPS;
+            }
+
+            bool hasCeiling = surfaces.TryFindCeiling(nextPos.WithY(floor.height), out var ceil);
+
+            if (nextPos[1] > floor.height + (100.0f * unitMultiplier)) {
+                if (hasCeiling && (nextPos[1] + (160.0f * unitMultiplier) >= ceil.height)) {
+                    return EGroundStep.GROUND_STEP_HIT_WALL_STOP_QSTEPS;
+                }
+
+                pos = nextPos;
+                this.floor = floor;
+                return EGroundStep.GROUND_STEP_LEFT_GROUND;
+            }
+
+            if (hasCeiling && (floor.height + (160.0f * unitMultiplier) >= ceil.height)) {
+                return EGroundStep.GROUND_STEP_HIT_WALL_STOP_QSTEPS;
+            }
+
+            pos = nextPos.WithY(floor.height);
+
+            this.floor = floor;
+
+            if (wall is not null) {
+                /*
+                s16 wallDYaw = atan2s(upperWall->normal.z, upperWall->normal.x) - faceAngle[1];
+
+                if (wallDYaw >= 0x2AAA && wallDYaw <= 0x5555) {
+                    return EGroundStep.GROUND_STEP_NONE;
+                }
+                if (wallDYaw <= -0x2AAA && wallDYaw >= -0x5555) {
+                    return EGroundStep.GROUND_STEP_NONE;
+                }
+
+                //*/
+                return EGroundStep.GROUND_STEP_HIT_WALL_CONTINUE_QSTEPS;
             }
 
             return EGroundStep.GROUND_STEP_NONE;
@@ -254,6 +309,11 @@ namespace SuperManual64.Player {
         }
 
         EAirStep perform_air_quarter_step(Vector3 intendedPos, EAirStep stepArg) {
+            if (!surfaces.TryFindFloor(intendedPos, out var newFloor)) {
+                return EAirStep.AIR_STEP_NONE;
+            }
+
+            floor = newFloor;
             pos = intendedPos;
             if (pos.y < floorHeight) {
                 pos.y = floorHeight;

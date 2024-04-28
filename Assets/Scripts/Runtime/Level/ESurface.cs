@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SuperManual64.Player {
+namespace SuperManual64.Level {
     [Flags]
     enum ESurface {
         SURFACE_DEFAULT = 0x0000, // Environment default
