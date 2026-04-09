@@ -34,13 +34,6 @@ MonoBehaviour:
     - net.slothsoft.unity-extensions
     - com.inkle.ink-unity-integration
     - nl.jeffreylanters.tweens
-    m_IsDefault: 0
-    m_Capabilities: 0
-    m_ConfigSource: 4
-  - m_Id: scoped:project:Unity NuGet
-    m_Name: Unity NuGet
-    m_Url: https://unitynuget-registry.azurewebsites.net
-    m_Scopes:
     - org.nuget
     m_IsDefault: 0
     m_Capabilities: 0
